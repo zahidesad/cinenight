@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.*;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<String>> handleAny(Exception ex) {
+    public ResponseEntity<ApiResponse<Object>> handleAny(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>("error", ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 }
