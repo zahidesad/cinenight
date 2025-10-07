@@ -1,14 +1,13 @@
 package com.zahid.cinenight.web;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
+import com.zahid.cinenight.common.api.ApiResponse;
 
 @RestController
+@RequestMapping("/api/v1/health")
 public class HealthController {
-
-    @GetMapping("/api/health")
-    public Map<String, String> health() {
-        return Map.of("status", "ok");
+    @GetMapping("/ping")
+    public ApiResponse<String> ping() {
+        return ApiResponse.ok("pong");
     }
 }
