@@ -1,4 +1,6 @@
 package com.zahid.cinenight.features.events.domain;
 
-public class RsvpRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface RsvpRepository extends JpaRepository<Rsvp, Long> {
 }

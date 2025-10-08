@@ -1,0 +1,2 @@
+ALTER TABLE movies
+    MODIFY COLUMN language VARCHAR(2) NOT NULL;

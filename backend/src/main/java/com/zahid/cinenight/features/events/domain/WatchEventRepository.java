@@ -1,4 +1,6 @@
 package com.zahid.cinenight.features.events.domain;
 
-public class WatchEventRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface WatchEventRepository extends JpaRepository<WatchEvent, Long> {
 }

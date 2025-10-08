@@ -1,0 +1,2 @@
+ALTER TABLE event_invites
+    MODIFY COLUMN token VARCHAR(36) NOT NULL;

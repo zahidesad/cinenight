@@ -1,4 +1,6 @@
 package com.zahid.cinenight.features.polls.domain;
 
-public class PollRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PollRepository extends JpaRepository<Poll, Long> {
 }
