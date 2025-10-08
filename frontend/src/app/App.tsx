@@ -3,7 +3,6 @@ import '@/index.css'
 import './auth.css'
 import { useEffect, useState } from 'react'
 import { login, register, forgot, resetPassword, me, logout, type UserDto } from '@/api/auth'
-import HealthStatus from '@/features/health/HealthStatus'
 
 function Shell() {
     const [user, setUser] = useState<UserDto | null>(null)
@@ -38,6 +37,7 @@ function Shell() {
                 </nav>
             </header>
 
+            {/* İçerik: ortalanmış kart */}
             <main className="auth-main">
                 <Routes>
                     <Route path="/" element={<Home />} />
@@ -48,9 +48,8 @@ function Shell() {
                 </Routes>
             </main>
 
-            <footer className="auth-footer">
-                <HealthStatus />
-            </footer>
+            {/* Debug/Health komponenti kaldırıldı */}
+            {/* <footer className="auth-footer"></footer> */}
         </div>
     )
 }
