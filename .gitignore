@@ -34,3 +34,4 @@ build/
 env
 env/frontend.local.env
 backend/src/main/resources/application-local.yml
+HELP.md
