@@ -2,10 +2,12 @@ server:
   port: 8080
 
 spring:
+  config:
+    import: optional:file:env/backend.local.properties
   datasource:
     url: jdbc:mysql://localhost:3306/cinenight?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8
     username: root
-    password:
+    password: 1234
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,5 +20,21 @@ spring:
     jdbc:
       initialize-schema: always
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
+    properties:
+      mail.smtp.auth: ${MAIL_AUTH:false}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS:false}
+
 logging.level:
-  org.springframework.security: INFO
+  org.springframework.mail: DEBUG
+  com.sun.mail: DEBUG
+
+app:
+  frontend:
+    base-url: ${APP_FRONTEND_BASE_URL:http://localhost:5173}
+  mail:
+    from: "CineNight <esadzahid57@gmail.com>"

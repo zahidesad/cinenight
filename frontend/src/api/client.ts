@@ -2,23 +2,29 @@ export type ApiResponse<T> = { ok: boolean; data: T | null; error?: string | nul
 
 export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api/v1';
 
-export async function apiGet<T>(path: string): Promise<ApiResponse<T>> {
+async function readJsonSafe(res: Response) {
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+        try { return await res.json(); } catch { /* yut */ }
+    }
+    return null;
+}
+
+export async function apiGet<T>(path: string) {
     try {
-        const res = await fetch(`${API_BASE}${path}`, {
-            method: 'GET',
-            credentials: 'include',
-        });
+        const res = await fetch(`${API_BASE}${path}`, { method: 'GET', credentials: 'include' });
+        const body = await readJsonSafe(res) as ApiResponse<T> | null;
         if (!res.ok) {
-            const msg = res.statusText || String(res.status) || 'HTTP error';
-            return { ok: false, error: `${res.status} ${msg}`, data: null };
+            const err = (body && typeof body.error === 'string') ? body.error : `${res.status} ${res.statusText || 'HTTP error'}`;
+            return { ok: false, error: err, data: null } as ApiResponse<T>;
         }
-        return (await res.json()) as ApiResponse<T>;
+        return (body ?? { ok: true, data: null, error: null }) as ApiResponse<T>;
     } catch (e: any) {
-        return { ok: false, error: e?.message ?? 'Network error', data: null };
+        return { ok: false, error: e?.message ?? 'Network error', data: null } as ApiResponse<T>;
     }
 }
 
-export async function apiPost<TReq, TRes>(path: string, body: TReq): Promise<ApiResponse<TRes>> {
+export async function apiPost<TReq, TRes>(path: string, body: TReq) {
     try {
         const res = await fetch(`${API_BASE}${path}`, {
             method: 'POST',
@@ -26,12 +32,13 @@ export async function apiPost<TReq, TRes>(path: string, body: TReq): Promise<Api
             credentials: 'include',
             body: JSON.stringify(body),
         });
+        const json = await readJsonSafe(res) as ApiResponse<TRes> | null;
         if (!res.ok) {
-            const msg = res.statusText || String(res.status) || 'HTTP error';
-            return { ok: false, error: `${res.status} ${msg}`, data: null };
+            const err = (json && typeof json.error === 'string') ? json.error : `${res.status} ${res.statusText || 'HTTP error'}`;
+            return { ok: false, error: err, data: null } as ApiResponse<TRes>;
         }
-        return (await res.json()) as ApiResponse<TRes>;
+        return (json ?? { ok: true, data: null, error: null }) as ApiResponse<TRes>;
     } catch (e: any) {
-        return { ok: false, error: e?.message ?? 'Network error', data: null };
+        return { ok: false, error: e?.message ?? 'Network error', data: null } as ApiResponse<TRes>;
     }
 }

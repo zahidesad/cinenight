@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+@layer base {
+    html, body, #root { height: 100%; }
+}
+
+@layer utilities {
+    .card {
+        @apply rounded-xl border border-white/10 bg-gray-900/60 shadow-lg;
+    }
+}
+
+.rdp {
+    --rdp-accent-color: #6366f1;
+    --rdp-accent-background-color: rgba(99,102,241,.14);
+    --rdp-background-color: transparent;
+    --rdp-outline: 2px solid var(--rdp-accent-color);
+
+    color: rgb(229 231 235);
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.rdp .rdp-months {
+    background: rgb(2 6 23 / 0.5);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+}
+
+.rdp .rdp-caption_label { color:#fff; font-weight:600; }
+.rdp .rdp-head_cell     { color: rgb(156 163 175); font-weight:500; }
+.rdp .rdp-nav_button    { color:#e5e7eb; border-radius: .5rem; }
+.rdp .rdp-nav_button:hover { background: rgb(31 41 55); }
+
+.rdp .rdp-day           { color: #e5e7eb; border-radius: .5rem; }
+.rdp .rdp-day:hover     { background: rgb(31 41 55); }
+.rdp .rdp-day_selected,
+.rdp .rdp-day_selected:hover {
+    background: var(--rdp-accent-color);
+    color: white;
+}
+.rdp .rdp-day_today:not(.rdp-day_selected) {
+    outline: 2px solid var(--rdp-accent-color);
+    outline-offset: 2px;
+}
+
+.rdp .rdp-dropdown {
+    background: #111827;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    border-radius: .5rem;
+}
+.rdp .rdp-dropdown option {
+    background: #111827;
+    color: #e5e7eb;
+}
+

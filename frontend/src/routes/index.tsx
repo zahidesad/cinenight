@@ -8,6 +8,7 @@ import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import TryDemoPage from '@/features/home/TryDemoPage';
 
 export default function AppRoutes() {
     const [user, setUser] = useState<UserDto | null>(null);
@@ -16,9 +17,7 @@ export default function AppRoutes() {
 
     useEffect(() => {
         me().then(r => {
-            if (r.ok && r.data) {
-                setUser(r.data);
-            }
+            if (r.ok && r.data) setUser(r.data);
             setLoading(false);
         });
     }, []);
@@ -34,9 +33,8 @@ export default function AppRoutes() {
     };
 
     if (loading) {
-        // Sayfanın ortasında bir yükleniyor animasyonu gösterebiliriz
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-900">
+            <div className="flex min-h-screen items-center justify-center bg-gray-950">
                 <p className="text-white">Yükleniyor...</p>
             </div>
         );
@@ -46,6 +44,7 @@ export default function AppRoutes() {
         <Routes>
             <Route element={<RootLayout user={user} onLogout={handleLogout} />}>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/try" element={<TryDemoPage />} />
             </Route>
 
             <Route element={<AuthLayout />}>
