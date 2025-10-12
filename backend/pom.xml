@@ -9,7 +9,6 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<groupId>com.zahid</groupId>
 	<artifactId>cinenight-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>cinenight</name>

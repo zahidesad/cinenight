@@ -1,6 +1,6 @@
 import { BrowserRouter, Link, Route, Routes, useNavigate } from 'react-router-dom'
 import '@/index.css'
-import './auth.css'
+import '../features/auth/auth.css'
 import { useEffect, useState } from 'react'
 import { login, register, forgot, resetPassword, me, logout, type UserDto } from '@/api/auth'
 
