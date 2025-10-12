@@ -17,11 +17,14 @@ export default function ResetPasswordPage() {
         }
     }, [location]);
 
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setMessage(null);
+        if (!token) {
+            setError('URL içinde token bulunamadı.');
+            return;
+        }
         const res = await resetPassword(token, newPassword);
         if (res.ok) {
             setMessage('Şifreniz başarıyla güncellendi.');
@@ -31,32 +34,34 @@ export default function ResetPasswordPage() {
     };
 
     return (
-        <>
-            <h2>Yeni Şifre Oluştur</h2>
-            <form onSubmit={handleSubmit} className="auth-form">
+        <div className="space-y-6">
+            <h2 className="text-center text-2xl font-semibold text-gray-200">Yeni Şifre Oluştur</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <input
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-600 bg-gray-700 p-3 text-gray-400 placeholder-gray-500"
                     placeholder="Token"
                     value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    required
-                    readOnly
+                    readOnly // Token'ı kullanıcı değiştiremez
                 />
                 <input
+                    className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 text-white placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     type="password"
                     placeholder="Yeni Şifreniz"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                 />
-                {error && <div className="error-message">{error}</div>}
-                {message && <div className="success-message">{message}</div>}
-                <button type="submit" className="btn-primary">Şifreyi Güncelle</button>
+                {error && <div className="rounded-md bg-red-900/50 p-3 text-center text-sm text-red-300">{error}</div>}
+                {message && <div className="rounded-md bg-green-900/50 p-3 text-center text-sm text-green-300">{message}</div>}
+                <button type="submit" className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700">
+                    Şifreyi Güncelle
+                </button>
             </form>
             {message && (
-                <div className="auth-footer">
-                    <Link to="/login">Giriş Yap</Link>
+                <div className="text-center text-sm">
+                    <Link to="/login" className="font-medium text-indigo-400 hover:text-indigo-300">Giriş Yap</Link>
                 </div>
             )}
-        </>
+        </div>
     );
 }

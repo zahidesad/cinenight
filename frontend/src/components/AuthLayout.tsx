@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import FilmReelIcon from '@/assets/film-reel.svg?react';
+import FilmReelIcon from '../assets/film-reel.svg?react';
 
 export default function AuthLayout() {
     return (

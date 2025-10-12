@@ -34,7 +34,12 @@ export default function AppRoutes() {
     };
 
     if (loading) {
-        return <div>Loading...</div>; // Or a proper spinner component
+        // Sayfanın ortasında bir yükleniyor animasyonu gösterebiliriz
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-900">
+                <p className="text-white">Yükleniyor...</p>
+            </div>
+        );
     }
 
     return (
