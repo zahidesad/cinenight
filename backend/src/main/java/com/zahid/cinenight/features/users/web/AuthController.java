@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -17,12 +18,12 @@ public class AuthController {
     public AuthController(AuthService auth) { this.auth = auth; }
 
     @PostMapping("/register")
-    public ApiResponse<UserDto> register(@RequestBody RegisterRequest req) {
+    public ApiResponse<UserDto> register(@RequestBody @Valid RegisterRequest req) {
         return ApiResponse.ok(auth.register(req));
     }
 
     @PostMapping("/login")
-    public ApiResponse<UserDto> login(@RequestBody LoginRequest req,
+    public ApiResponse<UserDto> login(@RequestBody @Valid LoginRequest req,
                                       HttpServletRequest request,
                                       HttpServletResponse response) {
         return ApiResponse.ok(auth.login(req, request, response));
@@ -35,13 +36,13 @@ public class AuthController {
     }
 
     @PostMapping("/forgot")
-    public ApiResponse<String> forgot(@RequestBody ForgotPasswordRequest req) {
+    public ApiResponse<String> forgot(@RequestBody @Valid ForgotPasswordRequest req) {
         auth.forgot(req);
         return ApiResponse.ok("sent");
     }
 
     @PostMapping("/reset")
-    public ApiResponse<String> reset(@RequestBody ResetPasswordRequest req) {
+    public ApiResponse<String> reset(@RequestBody @Valid ResetPasswordRequest req) {
         auth.reset(req);
         return ApiResponse.ok("password-updated");
     }

@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/health/**", "/api/v1/auth/**", "/api/v1/home/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/movies/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/movies/*/view", "/api/v1/movies/*/vote").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/movies/*/view").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/movies/*/vote").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));

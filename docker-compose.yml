@@ -1,8 +1,13 @@
 services:
-  mailhog:
-    image: mailhog/mailhog:v1.0.1
-    container_name: cinenight-mailhog
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    restart: unless-stopped
+  mysql:
+    image: mysql:8.0
+    container_name: cinenight-mysql
+    ports: ["3306:3306"]
+    environment:
+      MYSQL_DATABASE: cinenight
+      MYSQL_ROOT_PASSWORD: 1234
+    command: ["mysqld","--character-set-server=utf8mb4","--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+volumes:
+  mysql_data:

@@ -40,6 +40,8 @@ app:
     base-url: ${APP_FRONTEND_BASE_URL:http://localhost:5173}
   mail:
     from: "CineNight <esadzahid57@gmail.com>"
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 tmdb:
   api-key: ${TMDB_API_KEY}

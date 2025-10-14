@@ -19,7 +19,7 @@ public class MovieVote {
     @JoinColumn(name = "movie_id", nullable = false)
     private Movie movie;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TINYINT")
     private byte rating;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
