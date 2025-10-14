@@ -77,11 +77,11 @@ public class TmdbClient {
     }
 
     public TmdbGenresResponse genres(String lang) {
-        String url = withKey("/genre/movie/list?language=" + lang);
-        return web.get().uri(url)
+        String uri = withKey("/genre/movie/list?language={lang}");
+        return rest.get()
+                .uri(uri, lang)
                 .retrieve()
-                .bodyToMono(TmdbGenresResponse.class)
-                .block();
+                .body(TmdbGenresResponse.class);
     }
 
 }

@@ -43,7 +43,7 @@ public class Movie {
     @Column(name = "backdrop_path", length = 255)
     private String backdropPath;
 
-    @Column(length = 2)
+    @Column(length = 2, nullable = false)
     private String language;
 
     @Column(length = 255)

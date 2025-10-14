@@ -1,7 +1,7 @@
 package com.zahid.cinenight.features.movies.service;
 
-import com.zahid.cinenight.features.movies.domain.Movie;
-import com.zahid.cinenight.features.movies.domain.MovieRepository;
+import com.zahid.cinenight.features.movies.domain.*;
+import com.zahid.cinenight.features.movies.dto.TmdbGenre;
 import com.zahid.cinenight.features.movies.dto.TmdbMovie;
 import com.zahid.cinenight.features.movies.dto.TmdbMoviePage;
 import org.springframework.cache.annotation.Cacheable;
@@ -32,32 +32,43 @@ public class MovieService {
         }
     }
 
-    public record PagedMovies(int page, int totalPages, List<MovieDto> results) {}
+    public record PagedMovies(int page, int totalPages, List<MovieDto> results) {
+    }
 
     private final TmdbClient tmdb;
     private final MovieRepository movies;
+    private final GenreService genreService;
+    private final MovieViewRepository views;
+    private final MovieVoteRepository votes;
 
-    public MovieService(TmdbClient tmdb, MovieRepository movies) {
+
+    public MovieService(TmdbClient tmdb,
+                        MovieRepository movies,
+                        GenreService genreService,
+                        MovieViewRepository views,
+                        MovieVoteRepository votes) {
         this.tmdb = tmdb;
         this.movies = movies;
+        this.genreService = genreService;
+        this.views = views;
+        this.votes = votes;
     }
+
 
     @Cacheable(value = "movieById", key = "#tmdbId")
     public MovieDto byId(int tmdbId, String lang) {
         var existing = movies.findByTmdbId(tmdbId);
         if (existing.isPresent()) return MovieDto.from(existing.get());
 
-        // FIX: fetchById yerine movieDetail
         TmdbMovie tm = tmdb.movieDetail(tmdbId, lang);
-        return MovieDto.from(upsertFromTmdb(tm));
+        return MovieDto.from(upsertFromTmdb(tm, lang));
     }
 
     @Cacheable(value = "movieSearch", key = "#q+'|'+#lang+'|'+#page")
     @Transactional
     public PagedMovies search(String q, String lang, int page) {
-        // FIX: generic yok -> TmdbMoviePage
         TmdbMoviePage res = tmdb.search(q, lang, page);
-        var saved = res.results().stream().map(this::upsertFromTmdb).toList();
+        var saved = res.results().stream().map(t -> upsertFromTmdb(t, lang)).toList();
         return new PagedMovies(
                 res.page(),
                 res.total_pages(),
@@ -69,7 +80,7 @@ public class MovieService {
     @Transactional
     public PagedMovies trending(String lang, int page) {
         TmdbMoviePage res = tmdb.trending(lang, page);
-        var saved = res.results().stream().map(this::upsertFromTmdb).toList();
+        var saved = res.results().stream().map(t -> upsertFromTmdb(t, lang)).toList();
         return new PagedMovies(
                 res.page(),
                 res.total_pages(),
@@ -78,7 +89,7 @@ public class MovieService {
     }
 
     @Transactional
-    protected Movie upsertFromTmdb(TmdbMovie t) {
+    protected Movie upsertFromTmdb(TmdbMovie t, String lang) {
         var m = movies.findByTmdbId(t.id()).orElseGet(Movie::new);
         if (m.getId() == null) m.setTmdbId(t.id());
 
@@ -88,7 +99,8 @@ public class MovieService {
         if (nonNull(t.release_date()) && t.release_date().length() >= 4) {
             try {
                 m.setReleaseYear(Short.parseShort(t.release_date().substring(0, 4)));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         if (nonNull(t.runtime())) m.setRuntimeMinutes(t.runtime().shortValue());
@@ -96,15 +108,43 @@ public class MovieService {
         m.setBackdropPath(t.backdrop_path());
         m.setLanguage(t.original_language() != null ? t.original_language() : "en");
 
-        if (t.genres() != null) {
-            m.setGenres(
-                    t.genres().stream()
-                            .map(g -> g.name())
-                            .collect(Collectors.joining(","))
-            );
+        if (t.genres() != null && !t.genres().isEmpty()) {
+            m.setGenres(t.genres().stream()
+                    .map(TmdbGenre::name)
+                    .collect(Collectors.joining(",")));
+        } else if (t.genre_ids() != null && !t.genre_ids().isEmpty()) {
+            var map = genreService.genreMap(lang);
+            m.setGenres(t.genre_ids().stream()
+                    .map(id -> map.getOrDefault(id, String.valueOf(id)))
+                    .collect(Collectors.joining(",")));
         }
 
         m.setFetchedAt(Instant.now());
         return movies.save(m);
     }
+
+    private Movie ensureMovieEntity(int tmdbId, String lang) {
+        return movies.findByTmdbId(tmdbId).orElseGet(() -> {
+            var tm = tmdb.movieDetail(tmdbId, lang);
+            return upsertFromTmdb(tm, lang);
+        });
+    }
+
+    @Transactional
+    public void recordView(int tmdbId, String lang, String ip, String ua) {
+        var m = ensureMovieEntity(tmdbId, lang);
+        var v = new MovieView(m);
+        v.setIp(ip);
+        v.setUserAgent(ua);
+        views.save(v);
+    }
+
+    @Transactional
+    public void rate(int tmdbId, String lang, byte rating) {
+        if (rating < 1 || rating > 10) throw new IllegalArgumentException("rating must be 1..10");
+        var m = ensureMovieEntity(tmdbId, lang);
+        var vote = new MovieVote(m, rating);
+        votes.save(vote);
+    }
+
 }

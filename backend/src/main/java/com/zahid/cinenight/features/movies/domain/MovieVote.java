@@ -8,21 +8,32 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "movie_vote")
-@Getter @Setter
+@Getter
+@Setter
 public class MovieVote {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "movie_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "movie_id", nullable = false)
     private Movie movie;
 
-    @Column(nullable = false) private short rating; // 1..10
-    @Column(name = "created_at", nullable = false) private Instant createdAt;
+    @Column(nullable = false)
+    private byte rating;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-    public MovieVote() {}
-    public MovieVote(Movie movie, short rating) { this.movie = movie; this.rating = rating; }
+    public MovieVote() {
+    }
 
-    @PrePersist void pre() {
+    public MovieVote(Movie movie, byte rating) {
+        this.movie = movie;
+        this.rating = rating;
+    }
+
+    @PrePersist
+    void pre() {
         if (createdAt == null) createdAt = Instant.now();
     }
 }

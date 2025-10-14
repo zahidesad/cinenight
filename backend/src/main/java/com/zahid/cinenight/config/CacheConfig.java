@@ -15,7 +15,7 @@ public class CacheConfig {
     @Bean
     CacheManager cacheManager() {
         CaffeineCacheManager m = new CaffeineCacheManager(
-                "movieById", "movieSearch", "movieTrending"
+                "movieById", "movieSearch", "movieTrending", "tmdbGenreMap"
         );
         m.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(10_000)
