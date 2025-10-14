@@ -7,8 +7,26 @@ export const register = (email: string, password: string, displayName: string) =
         email, password, displayName,
     });
 
-export const login = (email: string, password: string) =>
-    apiPost<{ email: string; password: string }, UserDto>('/auth/login', { email, password });
+export async function login(email: string, password: string) {
+    const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+        let uiMessage = 'E-posta veya şifre yanlış.';
+        if (data.code === 'ACCOUNT_DISABLED') uiMessage = 'Hesabın devre dışı.';
+        if (data.code === 'ACCOUNT_LOCKED') uiMessage = 'Hesabın kilitli.';
+
+        return { ok: false, error: uiMessage, status: res.status, code: data.code };
+    }
+
+    return { ok: true, data };
+}
 
 export const logout = () => apiPost<{}, string>('/auth/logout', {});
 

@@ -19,6 +19,8 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: always
+  cache:
+    type: caffeine
 
   mail:
     host: ${MAIL_HOST:localhost}
@@ -38,3 +40,8 @@ app:
     base-url: ${APP_FRONTEND_BASE_URL:http://localhost:5173}
   mail:
     from: "CineNight <esadzahid57@gmail.com>"
+
+tmdb:
+  api-key: ${TMDB_API_KEY}
+  base-url: https://api.themoviedb.org/3
+  image-base: https://image.tmdb.org/t/p
