@@ -3,11 +3,14 @@ import { apiGet } from '@/api/client';
 
 export default function HealthStatus() {
     const [msg, setMsg] = useState('checking...');
+
     useEffect(() => {
-        apiGet<string>('/health/ping').then((r) => {
-            if (r.ok) setMsg(`Backend OK: ${r.data}`);
-            else setMsg(`Backend error: ${r.error}`);
-        });
+        (async () => {
+            const r = await apiGet<string>('/health/ping');
+            if (r.ok && r.data != null) setMsg(`Backend OK: ${r.data}`);
+            else setMsg(`Backend error: ${r.error ?? 'unknown'}`);
+        })();
     }, []);
+
     return <div>{msg}</div>;
 }

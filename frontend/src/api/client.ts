@@ -1,44 +1,48 @@
-export type ApiResponse<T> = { ok: boolean; data: T | null; error?: string | null };
+export type ApiResponse<T> = { ok: boolean; data: T | null; error: string | null };
 
-export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api/v1';
+const BASE = '/api/v1';
 
-async function readJsonSafe(res: Response) {
-    const ct = res.headers.get('content-type') || '';
-    if (ct.includes('application/json')) {
-        try { return await res.json(); } catch { /* yut */ }
-    }
-    return null;
-}
-
-export async function apiGet<T>(path: string) {
+async function handle<T>(res: Response): Promise<ApiResponse<T>> {
     try {
-        const res = await fetch(`${API_BASE}${path}`, { method: 'GET', credentials: 'include' });
-        const body = await readJsonSafe(res) as ApiResponse<T> | null;
-        if (!res.ok) {
-            const err = (body && typeof body.error === 'string') ? body.error : `${res.status} ${res.statusText || 'HTTP error'}`;
-            return { ok: false, error: err, data: null } as ApiResponse<T>;
-        }
-        return (body ?? { ok: true, data: null, error: null }) as ApiResponse<T>;
-    } catch (e: any) {
-        return { ok: false, error: e?.message ?? 'Network error', data: null } as ApiResponse<T>;
+        const body = await res.json();
+        // Backend zaten { ok, data, error } döndürüyor
+        return body as ApiResponse<T>;
+    } catch {
+        return { ok: false, data: null, error: 'Geçersiz cevap' };
     }
 }
 
-export async function apiPost<TReq, TRes>(path: string, body: TReq) {
-    try {
-        const res = await fetch(`${API_BASE}${path}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(body),
-        });
-        const json = await readJsonSafe(res) as ApiResponse<TRes> | null;
-        if (!res.ok) {
-            const err = (json && typeof json.error === 'string') ? json.error : `${res.status} ${res.statusText || 'HTTP error'}`;
-            return { ok: false, error: err, data: null } as ApiResponse<TRes>;
-        }
-        return (json ?? { ok: true, data: null, error: null }) as ApiResponse<TRes>;
-    } catch (e: any) {
-        return { ok: false, error: e?.message ?? 'Network error', data: null } as ApiResponse<TRes>;
-    }
+export async function apiGet<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
+    const res = await fetch(`${BASE}${path}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        ...init,
+    });
+    return handle<T>(res);
 }
+
+export async function apiPost<T, B = unknown>(
+    path: string,
+    body?: B,
+    init?: RequestInit
+): Promise<ApiResponse<T>> {
+    const res = await fetch(`${BASE}${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        ...init,
+    });
+    return handle<T>(res);
+}
+
+// Uyum için (isteğe bağlı): başka yerlerde "import { api }" kullanıldıysa çalışsın
+export const api = {
+    get: apiGet as <T>(path: string, init?: RequestInit) => Promise<ApiResponse<T>>,
+    post: apiPost as <T, B = unknown>(
+        path: string,
+        body?: B,
+        init?: RequestInit
+    ) => Promise<ApiResponse<T>>,
+};
