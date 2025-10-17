@@ -1,194 +1,173 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-    fetchTrending,
-    fetchTopRated,
-    fetchTopMovies,
-    TmdbMovie,
-    TopMovie,
-} from "@/api/home";
+import { fetchTrending, fetchTopRated, fetchTopMovies, TmdbMovie, TopMovie } from "@/api/home";
+import { searchMovies, PagedMovies } from "@/api/movies"; // EKLENDİ: Arama için import
 
-type LoadingState = { trending: boolean; topRated: boolean; topMovies: boolean };
+// EKLENDİ: Aktif sekmeyi belirlemek için bir type
+export type TabKey = "trending" | "toprated" | "cinenight";
 
-export type HomeData = {
-    lang: string;
-    setLang: (l: string) => void;
-    limit: number;
-    setLimit: (n: number) => void;
+// EKLENDİ: Hook'un dönüş tipini daha anlaşılır yapmak için
+export type UseHomeDataReturn = ReturnType<typeof useHomeData>;
 
-    trending: TmdbMovie[];
-    trendingPage: number;
-    trendingTotalPages: number;
-    hasMoreTrending: boolean;
-    loadMoreTrending: () => Promise<void>;
-    reloadTrending: () => Promise<void>;
-
-    topRated: TmdbMovie[];
-    topRatedPage: number;
-    topRatedTotalPages: number;
-    hasMoreTopRated: boolean;
-    loadMoreTopRated: () => Promise<void>;
-    reloadTopRated: () => Promise<void>;
-
-    topMovies: TopMovie[];
-    reloadTopMovies: () => Promise<void>;
-
-    refreshAll: () => Promise<void>;
-    loading: LoadingState;
-    error: string | null;
-};
-
-export function useHomeData(
-    initialLang = "tr-TR",
-    initialLimit = 12
-): HomeData {
+export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
     const [lang, setLang] = useState(initialLang);
-    const [limit, setLimit] = useState(initialLimit);
 
-    const [trending, setTrending] = useState<TmdbMovie[]>([]);
-    const [trendingPage, setTrendingPage] = useState(0);
-    const [trendingTotalPages, setTrendingTotalPages] = useState(1);
+    // EKLENDİ: Arama sorgusu state'i
+    const [q, setQ] = useState("");
+    // EKLENDİ: Aktif sekme state'i
+    const [active, setActive] = useState<TabKey>("trending");
 
-    const [topRated, setTopRated] = useState<TmdbMovie[]>([]);
-    const [topRatedPage, setTopRatedPage] = useState(0);
-    const [topRatedTotalPages, setTopRatedTotalPages] = useState(1);
+    // TRENDING state
+    const [trend, setTrend] = useState<TmdbMovie[]>([]);
+    const [pageTrend, setPageTrend] = useState(0);
+    const [totalPagesTrend, setTotalPagesTrend] = useState(1);
+    const [loadingTrend, setLoadingTrend] = useState(false);
+    const [errTrend, setErrTrend] = useState(false);
 
-    const [topMovies, setTopMovies] = useState<TopMovie[]>([]);
+    // TOP RATED state
+    const [toprated, setToprated] = useState<TmdbMovie[]>([]);
+    const [pageTopRated, setPageTopRated] = useState(0);
+    const [totalPagesTop, setTotalPagesTop] = useState(1);
+    const [loadingTopRated, setLoadingTopRated] = useState(false);
+    const [errTopRated, setErrTopRated] = useState(false);
 
-    const [loading, setLoading] = useState<LoadingState>({
-        trending: false,
-        topRated: false,
-        topMovies: false,
-    });
-    const [error, setError] = useState<string | null>(null);
+    // TOP CINENIGHT state
+    const [topCine, setTopCine] = useState<TopMovie[]>([]);
+    const [limitTop, setLimitTop] = useState(initialLimitTop);
+    const [loadingTopCine, setLoadingTopCine] = useState(false);
+    const [errTopCine, setErrTopCine] = useState(false);
 
-    const fetchTrendingPage = useCallback(
-        async (opts: { append?: boolean; page?: number } = {}) => {
-            setLoading((s) => ({ ...s, trending: true }));
-            setError(null);
-            try {
-                const page = await fetchTrending(
-                    lang,
-                    opts.page ?? (opts.append ? trendingPage + 1 : 1)
-                );
-                setTrending((prev) =>
-                    opts.append ? [...prev, ...page.results] : page.results
-                );
-                setTrendingPage(page.page);
-                setTrendingTotalPages(page.total_pages);
-            } catch (e: any) {
-                setError(e?.message ?? "Trendler yüklenemedi.");
-            } finally {
-                setLoading((s) => ({ ...s, trending: false }));
-            }
-        },
-        [lang, trendingPage]
-    );
+    // EKLENDİ: Arama state'leri
+    const [searchResults, setSearchResults] = useState<PagedMovies | null>(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchErr, setSearchErr] = useState<string | null>(null);
 
-    const fetchTopRatedPage = useCallback(
-        async (opts: { append?: boolean; page?: number } = {}) => {
-            setLoading((s) => ({ ...s, topRated: true }));
-            setError(null);
-            try {
-                const page = await fetchTopRated(
-                    lang,
-                    opts.page ?? (opts.append ? topRatedPage + 1 : 1)
-                );
-                setTopRated((prev) =>
-                    opts.append ? [...prev, ...page.results] : page.results
-                );
-                setTopRatedPage(page.page);
-                setTopRatedTotalPages(page.total_pages);
-            } catch (e: any) {
-                setError(e?.message ?? "En yüksek puanlılar yüklenemedi.");
-            } finally {
-                setLoading((s) => ({ ...s, topRated: false }));
-            }
-        },
-        [lang, topRatedPage]
-    );
 
-    const fetchTop = useCallback(async () => {
-        setLoading((s) => ({ ...s, topMovies: true }));
-        setError(null);
+    const loadTrending = useCallback(async (append = false, pageNum = 1) => {
+        setLoadingTrend(true);
+        setErrTrend(false);
         try {
-            const list = await fetchTopMovies(limit);
-            setTopMovies(list);
-        } catch (e: any) {
-            setError(e?.message ?? "Top CineNight listesi yüklenemedi.");
+            const data = await fetchTrending(lang, pageNum);
+            setTrend((prev) => (append ? [...prev, ...data.results] : data.results));
+            setPageTrend(data.page);
+            setTotalPagesTrend(data.total_pages);
+        } catch {
+            setErrTrend(true);
         } finally {
-            setLoading((s) => ({ ...s, topMovies: false }));
+            setLoadingTrend(false);
         }
-    }, [limit]);
+    }, [lang]);
 
-    const refreshAll = useCallback(async () => {
-        await Promise.all([
-            fetchTrendingPage({ page: 1 }),
-            fetchTopRatedPage({ page: 1 }),
-            fetchTop(),
-        ]);
-    }, [fetchTop, fetchTopRatedPage, fetchTrendingPage]);
+    const loadTopRated = useCallback(async (append = false, pageNum = 1) => {
+        setLoadingTopRated(true);
+        setErrTopRated(false);
+        try {
+            const data = await fetchTopRated(lang, pageNum);
+            setToprated((prev) => (append ? [...prev, ...data.results] : data.results));
+            setPageTopRated(data.page);
+            setTotalPagesTop(data.total_pages);
+        } catch {
+            setErrTopRated(true);
+        } finally {
+            setLoadingTopRated(false);
+        }
+    }, [lang]);
 
-    const loadMoreTrending = useCallback(async () => {
-        if (trendingPage >= trendingTotalPages || loading.trending) return;
-        await fetchTrendingPage({ append: true, page: trendingPage + 1 });
-    }, [fetchTrendingPage, trendingPage, trendingTotalPages, loading.trending]);
+    const loadTopCine = useCallback(async (limit: number) => {
+        setLimitTop(limit);
+        setLoadingTopCine(true);
+        setErrTopCine(false);
+        try {
+            const data = await fetchTopMovies(limit);
+            setTopCine(data);
+        } catch {
+            setErrTopCine(true);
+        } finally {
+            setLoadingTopCine(false);
+        }
+    }, []);
 
-    const loadMoreTopRated = useCallback(async () => {
-        if (topRatedPage >= topRatedTotalPages || loading.topRated) return;
-        await fetchTopRatedPage({ append: true, page: topRatedPage + 1 });
-    }, [fetchTopRatedPage, topRatedPage, topRatedTotalPages, loading.topRated]);
+    // EKLENDİ: Arama fonksiyonu
+    const performSearch = useCallback(async (query: string) => {
+        if (query.trim().length === 0) {
+            setSearchResults(null);
+            return;
+        }
+        setIsSearching(true);
+        setSearchErr(null);
+        try {
+            const resp = await searchMovies(query, lang, 1);
+            if(resp.ok) {
+                setSearchResults(resp.data);
+            } else {
+                setSearchErr(resp.error || "Arama başarısız oldu.");
+            }
+        } catch (e: any) {
+            setSearchErr(e.message || "Arama sırasında bir hata oluştu.");
+        } finally {
+            setIsSearching(false);
+        }
+    }, [lang]);
 
-    const reloadTrending = useCallback(
-        async () => fetchTrendingPage({ page: 1 }),
-        [fetchTrendingPage]
-    );
-    const reloadTopRated = useCallback(
-        async () => fetchTopRatedPage({ page: 1 }),
-        [fetchTopRatedPage]
-    );
-    const reloadTopMovies = useCallback(async () => fetchTop(), [fetchTop]);
-
-    const hasMoreTrending = useMemo(
-        () => trendingPage < trendingTotalPages,
-        [trendingPage, trendingTotalPages]
-    );
-    const hasMoreTopRated = useMemo(
-        () => topRatedPage < topRatedTotalPages,
-        [topRatedPage, topRatedTotalPages]
-    );
-
-    // İlk yükleme + dil/limit değişince tazele
+    // EKLENDİ: Debounce ile arama tetikleme
     useEffect(() => {
-        refreshAll();
-    }, [lang, limit, refreshAll]);
+        const handler = setTimeout(() => {
+            performSearch(q);
+        }, 300); // 300ms bekle
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [q, performSearch]);
+
+
+    // Initial data load
+    useEffect(() => {
+        loadTrending(false, 1);
+        loadTopRated(false, 1);
+        loadTopCine(initialLimitTop);
+    }, [loadTrending, loadTopRated, loadTopCine, initialLimitTop, lang]);
+
+    const featured = useMemo(() => trend[0] ?? toprated[0] ?? null, [trend, toprated]);
+
+    // Hangi sekmenin yüklendiğini ve hata verdiğini belirlemek için
+    const loadingKey = useMemo(() => {
+        if (active === "trending" && loadingTrend) return "trending";
+        if (active === "toprated" && loadingTopRated) return "toprated";
+        if (active === "cinenight" && loadingTopCine) return "cinenight";
+        return null;
+    }, [active, loadingTrend, loadingTopRated, loadingTopCine]);
+
+    const errKey = useMemo(() => {
+        if (active === "trending" && errTrend) return "trending";
+        if (active === "toprated" && errTopRated) return "toprated";
+        if (active === "cinenight" && errTopCine) return "cinenight";
+        return null;
+    }, [active, errTrend, errTopRated, errTopCine]);
+
 
     return {
-        lang,
-        setLang,
-        limit,
-        setLimit,
+        lang, setLang,
+        q, setQ, // EKLENDİ
+        active, setActive, // EKLENDİ
 
-        trending,
-        trendingPage,
-        trendingTotalPages,
-        hasMoreTrending,
-        loadMoreTrending,
-        reloadTrending,
+        // Data
+        featured,
+        trend,
+        toprated,
+        topCine,
 
-        topRated,
-        topRatedPage,
-        topRatedTotalPages,
-        hasMoreTopRated,
-        loadMoreTopRated,
-        reloadTopRated,
+        // Pagination & Loading
+        pageTrend, totalPagesTrend,
+        pageTopRated, totalPagesTop,
+        limitTop,
+        loadMoreTrending: () => loadTrending(true, pageTrend + 1),
+        loadMoreTopRated: () => loadTopRated(true, pageTopRated + 1),
+        loadTopCine,
 
-        topMovies,
-        reloadTopMovies,
+        // Arama
+        searchResults, isSearching, searchErr, // EKLENDİ
 
-        refreshAll,
-        loading,
-        error,
+        // State indicators
+        loadingKey, errKey
     };
 }
-
-export default useHomeData;
