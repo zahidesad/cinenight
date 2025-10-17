@@ -91,3 +91,7 @@ export const MoviesApi = {
     recordView,
     vote,
 };
+
+export const searchMovies = (q: string, language="tr-TR", page=1) =>
+    apiGet<PagedMovies>(`/api/v1/movies/search?q=${encodeURIComponent(q)}&language=${language}&page=${page}`);
+

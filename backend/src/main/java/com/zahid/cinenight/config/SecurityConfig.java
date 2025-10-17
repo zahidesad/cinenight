@@ -30,6 +30,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/movies/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/movies/*/view").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/movies/*/vote").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/events/*/ics").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/polls/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/movies/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
