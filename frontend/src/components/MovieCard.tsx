@@ -4,6 +4,12 @@ import type { TmdbMovie } from "@/api/movies";
 
 const IMG = import.meta.env.VITE_TMDB_IMAGE_BASE ?? "https://image.tmdb.org/t/p";
 
+type AnyMovie = TmdbMovie & {
+    tmdbId?: number;
+    posterPath?: string | null;
+    name?: string;
+};
+
 type TopMovie = {
     tmdbId: number;
     title: string;
@@ -12,15 +18,21 @@ type TopMovie = {
 };
 
 type Props =
-    | { variant?: "tmdb"; movie: TmdbMovie } // default
-    | { variant: "top";  movie: TopMovie };
+    | { variant?: "tmdb"; movie: AnyMovie } // default
+    | { variant: "top";  movie: TopMovie };
 
 export default function MovieCard(props: Props) {
     const [busy, setBusy] = useState(false);
 
-    const tmdbId    = props.variant === "top" ? props.movie.tmdbId : props.movie.id;
-    const title     = props.movie.title;
-    const poster    = props.variant === "top" ? props.movie.posterPath : props.movie.poster_path;
+    // DÜZELTME: Hem `tmdbId` hem de `id` alanlarını kontrol et
+    const tmdbId = (props.movie as AnyMovie).tmdbId || (props.movie as AnyMovie).id;
+
+    // DÜZELTME: Hem `title` hem de `name` alanlarını kontrol et
+    const title = (props.movie as AnyMovie).title || (props.movie as AnyMovie).name || "Başlık Yok";
+
+    // DÜZELTME: Hem `posterPath` hem de `poster_path` alanlarını kontrol et
+    const poster = (props.movie as AnyMovie).posterPath || (props.movie as AnyMovie).poster_path;
+
     const posterUrl = poster ? `${IMG}/w342${poster}` : "/no-poster.svg";
 
     const onClick = async () => {
