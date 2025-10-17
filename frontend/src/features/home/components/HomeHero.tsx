@@ -5,11 +5,11 @@ import { SkeletonBanner, SkeletonRow, EmptyRow } from "./Skeletons";
 type Props = {
     featured?: any;
     q?: string;
-    onQueryChange: (v: string) => void;
+    onQueryChange?: (v: string) => void; // opsiyonel
     isSearching: boolean;
     searchErr: string | null;
     searchResults: { results?: any[] } | null;
-    onRetrySearch: () => void;
+    onRetrySearch?: () => void;          // opsiyonel
 };
 
 export default function HomeHero({
@@ -31,8 +31,7 @@ export default function HomeHero({
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold text-white">Bu akşam ne izliyoruz?</h1>
                     <p className="mt-2 text-gray-300">
-                        Arkadaşlarınla film öner, oy ver ve kazanan filme göre izleme gecesini planla. RSVP ve iCal ile herkes
-                        senkron.
+                        Arkadaşlarınla film öner, oy ver ve kazanan filme göre izleme gecesini planla. RSVP ve iCal ile herkes senkron.
                     </p>
                 </div>
 
@@ -40,8 +39,8 @@ export default function HomeHero({
                     <label className="text-sm text-gray-400">Hızlı arama</label>
                     <div className="mt-1 relative">
                         <input
-                            value={q ?? ""}                            // undefined olursa boş string
-                            onChange={(e) => onQueryChange(e.target.value)}
+                            value={q ?? ""}
+                            onChange={(e) => onQueryChange?.(e.target.value)}
                             placeholder="Film ara… (ör. Inception)"
                             className="w-full rounded-xl bg-gray-800/70 border border-white/10 px-4 py-3 pr-10 text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
@@ -55,7 +54,7 @@ export default function HomeHero({
                             {searchErr && (
                                 <div className="flex items-center justify-between text-red-300">
                                     <span>{searchErr}</span>
-                                    <button onClick={onRetrySearch} className="text-sm underline">
+                                    <button onClick={() => onRetrySearch?.()} className="text-sm underline">
                                         yeniden dene
                                     </button>
                                 </div>
@@ -93,7 +92,9 @@ export default function HomeHero({
                             <div className="absolute inset-0 bg-gray-800" />
                         )}
                         <div className="relative p-5">
-                            <h3 className="text-xl font-semibold text-white">{featured.title ?? featured.name ?? "Seçili film"}</h3>
+                            <h3 className="text-xl font-semibold text-white">
+                                {featured.title ?? featured.name ?? "Seçili film"}
+                            </h3>
                             <div className="mt-3">
                                 <a
                                     href="#tabs"
