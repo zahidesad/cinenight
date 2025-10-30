@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchTrending, fetchTopRated, fetchTopMovies, TmdbMovie, TopMovie } from "@/api/home";
-import { searchMovies, PagedMovies } from "@/api/movies";
+import { fetchTrending, fetchTopRated, fetchTopMovies, TopMovie } from "@/api/home";
+import { searchMovies, PagedMovies, type TmdbMovie } from "@/api/movies";
 
 export type TabKey = "trending" | "toprated" | "cinenight";
 
@@ -146,28 +146,18 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
         lang, setLang,
         q, setQ,
         active, setActive,
-
-        // Data
         featured,
         trend,
         toprated,
         topCine,
-
-        // Pagination & Loading
         pageTrend, totalPagesTrend,
         pageTopRated, totalPagesTop,
         limitTop,
         loadMoreTrending: () => loadTrending(true, pageTrend + 1),
         loadMoreTopRated: () => loadTopRated(true, pageTopRated + 1),
         loadTopCine,
-
-        // Arama
         searchResults, isSearching, searchErr,
-
-        // State indicators
         loadingKey, errKey,
-
         loadTrending,
-        loadTopRated
-    };
+    }
 }

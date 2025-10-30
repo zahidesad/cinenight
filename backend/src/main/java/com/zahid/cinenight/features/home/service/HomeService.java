@@ -90,6 +90,7 @@ public class HomeService {
         return new TmdbMovie(
                 m.id(),
                 m.title(),
+                m.name(),
                 m.original_title(),
                 m.original_language(),
                 m.release_date(),

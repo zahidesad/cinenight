@@ -7,6 +7,7 @@ import java.util.List;
 public record TmdbMovie(
         Integer id,
         String title,
+        String name,
         String original_title,
         String original_language,
         String release_date,

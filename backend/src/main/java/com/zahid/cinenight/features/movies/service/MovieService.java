@@ -4,6 +4,8 @@ import com.zahid.cinenight.features.movies.domain.*;
 import com.zahid.cinenight.features.movies.dto.TmdbGenre;
 import com.zahid.cinenight.features.movies.dto.TmdbMovie;
 import com.zahid.cinenight.features.movies.dto.TmdbMoviePage;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +46,9 @@ public class MovieService {
     private final MovieViewRepository views;
     private final MovieVoteRepository votes;
 
+    @Autowired
+    @Lazy
+    private MovieService self;
 
     public MovieService(TmdbClient tmdb,
                         MovieRepository movies,
@@ -66,14 +71,13 @@ public class MovieService {
         }
 
         TmdbMovie tm = tmdb.movieDetail(tmdbId, lang);
-        return MovieDto.from(upsertFromTmdb(tm, lang));
+        return MovieDto.from(self.upsertFromTmdb(tm, lang));
     }
 
     @Cacheable(value = "movieSearch", key = "#q+'|'+#lang+'|'+#page")
-    @Transactional
     public PagedMovies search(String q, String lang, int page) {
         TmdbMoviePage res = tmdb.search(q, lang, page);
-        var saved = res.results().stream().map(t -> upsertFromTmdb(t, lang)).toList();
+        var saved = res.results().stream().map(t -> self.upsertFromTmdb(t, lang)).toList();
         return new PagedMovies(
                 res.page(),
                 res.total_pages(),
@@ -82,10 +86,9 @@ public class MovieService {
     }
 
     @Cacheable(value = "movieTrending", key = "#lang+'|'+#page")
-    @Transactional
     public PagedMovies trending(String lang, int page) {
         TmdbMoviePage res = tmdb.trending(lang, page);
-        var saved = res.results().stream().map(t -> upsertFromTmdb(t, lang)).toList();
+        var saved = res.results().stream().map(t -> self.upsertFromTmdb(t, lang)).toList();
         return new PagedMovies(
                 res.page(),
                 res.total_pages(),
@@ -94,13 +97,21 @@ public class MovieService {
     }
 
     @Transactional
-    protected Movie upsertFromTmdb(TmdbMovie t, String lang) {
+    public synchronized Movie upsertFromTmdb(TmdbMovie t, String lang) {
         var m = movies.findByTmdbId(t.id()).orElseGet(Movie::new);
         if (m.getId() == null) m.setTmdbId(t.id());
 
-        m.setTitle(t.title());
+        String newTitle = t.title();
+        if (newTitle == null) {
+            newTitle = t.name();
+        }
+        if (newTitle == null) {
+            newTitle = "Başlık Bilinmiyor";
+        }
+
+        m.setTitle(t.title() != null ? t.title() : t.name());
         m.setOriginalTitle(t.original_title());
-        m.setDescription(t.overview()); // EKLENDİ
+        m.setDescription(t.overview());
 
         if (nonNull(t.release_date()) && t.release_date().length() >= 4) {
             try {
@@ -132,7 +143,7 @@ public class MovieService {
     private Movie ensureMovieEntity(int tmdbId, String lang) {
         return movies.findByTmdbId(tmdbId).orElseGet(() -> {
             var tm = tmdb.movieDetail(tmdbId, lang);
-            return upsertFromTmdb(tm, lang);
+            return self.upsertFromTmdb(tm, lang);
         });
     }
 

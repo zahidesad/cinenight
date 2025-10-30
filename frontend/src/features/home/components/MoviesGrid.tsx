@@ -32,11 +32,11 @@ export default function MoviesGrid({
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {items.map((m: AnyMovieType) => {
-                const key = (m as MovieDto).tmdbId ?? (m as TmdbMovie).id;
+                const key = 'tmdbId' in m ? m.tmdbId : m.id;
                 return (
                     <MovieCard
                         key={`${variant}-${key}`}
-                        movie={m as never}
+                        movie={m as any}
                         variant={variant}
                         onCardClick={onMovieClick}
                     />
