@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchTrending, fetchTopRated, fetchTopMovies, TmdbMovie, TopMovie } from "@/api/home";
-import { searchMovies, PagedMovies } from "@/api/movies"; // EKLENDİ: Arama için import
+import { searchMovies, PagedMovies } from "@/api/movies";
 
-// EKLENDİ: Aktif sekmeyi belirlemek için bir type
 export type TabKey = "trending" | "toprated" | "cinenight";
 
-// EKLENDİ: Hook'un dönüş tipini daha anlaşılır yapmak için
 export type UseHomeDataReturn = ReturnType<typeof useHomeData>;
 
 export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
     const [lang, setLang] = useState(initialLang);
 
-    // EKLENDİ: Arama sorgusu state'i
     const [q, setQ] = useState("");
-    // EKLENDİ: Aktif sekme state'i
     const [active, setActive] = useState<TabKey>("trending");
 
     // TRENDING state
@@ -36,7 +32,6 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
     const [loadingTopCine, setLoadingTopCine] = useState(false);
     const [errTopCine, setErrTopCine] = useState(false);
 
-    // EKLENDİ: Arama state'leri
     const [searchResults, setSearchResults] = useState<PagedMovies | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchErr, setSearchErr] = useState<string | null>(null);
@@ -86,7 +81,6 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
         }
     }, []);
 
-    // EKLENDİ: Arama fonksiyonu
     const performSearch = useCallback(async (query: string) => {
         if (query.trim().length === 0) {
             setSearchResults(null);
@@ -101,14 +95,19 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
             } else {
                 setSearchErr(resp.error || "Arama başarısız oldu.");
             }
-        } catch (e: any) {
-            setSearchErr(e.message || "Arama sırasında bir hata oluştu.");
+        } catch (e: unknown) {
+            const msg =
+                e instanceof Error
+                    ? e.message
+                    : typeof e === "string"
+                        ? e
+                        : "Arama sırasında bir hata oluştu.";
+            setSearchErr(msg);
         } finally {
             setIsSearching(false);
         }
     }, [lang]);
 
-    // EKLENDİ: Debounce ile arama tetikleme
     useEffect(() => {
         const handler = setTimeout(() => {
             performSearch(q);
@@ -120,7 +119,6 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
     }, [q, performSearch]);
 
 
-    // Initial data load
     useEffect(() => {
         loadTrending(false, 1);
         loadTopRated(false, 1);
@@ -129,7 +127,6 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
 
     const featured = useMemo(() => trend[0] ?? toprated[0] ?? null, [trend, toprated]);
 
-    // Hangi sekmenin yüklendiğini ve hata verdiğini belirlemek için
     const loadingKey = useMemo(() => {
         if (active === "trending" && loadingTrend) return "trending";
         if (active === "toprated" && loadingTopRated) return "toprated";
@@ -147,8 +144,8 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
 
     return {
         lang, setLang,
-        q, setQ, // EKLENDİ
-        active, setActive, // EKLENDİ
+        q, setQ,
+        active, setActive,
 
         // Data
         featured,
@@ -165,9 +162,12 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
         loadTopCine,
 
         // Arama
-        searchResults, isSearching, searchErr, // EKLENDİ
+        searchResults, isSearching, searchErr,
 
         // State indicators
-        loadingKey, errKey
+        loadingKey, errKey,
+
+        loadTrending,
+        loadTopRated
     };
 }

@@ -97,7 +97,8 @@ public class HomeService {
                 m.poster_path(),
                 m.backdrop_path(),
                 list,
-                m.genre_ids()
+                m.genre_ids(),
+                m.overview()
         );
     }
 }

@@ -1,10 +1,21 @@
+import { useState } from "react";
 import MoviesTabs from "./components/MoviesTabs";
 import MoviesGrid from "./components/MoviesGrid";
 import HomeHero from "./components/HomeHero";
 import { useHomeData } from "./hooks/useHomeData";
+import MovieDetailModal from "@/components/MovieDetailModal";
 
 export default function HomePage() {
     const h = useHomeData();
+    const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
+
+    const handleMovieClick = (tmdbId: number) => {
+        setSelectedMovieId(tmdbId);
+    };
+
+    const handleCloseModal = () => {
+        setSelectedMovieId(null);
+    };
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -16,6 +27,7 @@ export default function HomePage() {
                 searchErr={h.searchErr}
                 searchResults={h.searchResults}
                 onRetrySearch={() => h.setQ(h.q)}
+                onMovieClick={handleMovieClick} // EKLENDİ
             />
 
             <section id="tabs" className="space-y-4">
@@ -35,7 +47,6 @@ export default function HomePage() {
                     onRefreshTop={() => h.loadTopCine(h.limitTop)}
                 />
 
-                {/* Aktif sekmeye göre grid */}
                 {h.active === "trending" && (
                     <MoviesGrid
                         items={h.trend}
@@ -43,6 +54,7 @@ export default function HomePage() {
                         loading={h.loadingKey === "trending"}
                         error={h.errKey === "trending"}
                         onRetry={() => h.loadTrending(false, 1)}
+                        onMovieClick={handleMovieClick} // EKLENDİ
                     />
                 )}
                 {h.active === "toprated" && (
@@ -52,6 +64,7 @@ export default function HomePage() {
                         loading={h.loadingKey === "toprated"}
                         error={h.errKey === "toprated"}
                         onRetry={() => h.loadTopRated(false, 1)}
+                        onMovieClick={handleMovieClick} // EKLENDİ
                     />
                 )}
                 {h.active === "cinenight" && (
@@ -62,9 +75,18 @@ export default function HomePage() {
                         error={h.errKey === "cinenight"}
                         onRetry={() => h.loadTopCine(h.limitTop)}
                         emptyText="Henüz etkileşim toplayan film yok. Bir iki oy/izlenme ile burası dolacak."
+                        onMovieClick={handleMovieClick} // EKLENDİ
                     />
                 )}
             </section>
+
+            {/* EKLENDİ: Modal'ı koşullu olarak render et */}
+            {selectedMovieId && (
+                <MovieDetailModal
+                    tmdbId={selectedMovieId}
+                    onClose={handleCloseModal}
+                />
+            )}
         </div>
     );
 }

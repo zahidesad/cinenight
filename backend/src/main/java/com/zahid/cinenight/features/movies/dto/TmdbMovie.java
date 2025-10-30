@@ -14,5 +14,6 @@ public record TmdbMovie(
         String poster_path,
         String backdrop_path,
         List<TmdbGenre> genres,
-        List<Integer> genre_ids
+        List<Integer> genre_ids,
+        String overview
 ) {}

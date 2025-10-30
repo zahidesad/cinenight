@@ -18,7 +18,9 @@ import static java.util.Objects.nonNull;
 public class MovieService {
 
     public record MovieDto(Long id, Integer tmdbId, String title, String posterPath,
-                           String backdropPath, String language, Short releaseYear) {
+                           String backdropPath, String language, Short releaseYear,
+                           String description
+    ) {
         public static MovieDto from(Movie m) {
             return new MovieDto(
                     m.getId(),
@@ -27,7 +29,8 @@ public class MovieService {
                     m.getPosterPath(),
                     m.getBackdropPath(),
                     m.getLanguage(),
-                    m.getReleaseYear()
+                    m.getReleaseYear(),
+                    m.getDescription()
             );
         }
     }
@@ -58,7 +61,9 @@ public class MovieService {
     @Cacheable(value = "movieById", key = "#tmdbId")
     public MovieDto byId(int tmdbId, String lang) {
         var existing = movies.findByTmdbId(tmdbId);
-        if (existing.isPresent()) return MovieDto.from(existing.get());
+        if (existing.isPresent() && existing.get().getDescription() != null) {
+            return MovieDto.from(existing.get());
+        }
 
         TmdbMovie tm = tmdb.movieDetail(tmdbId, lang);
         return MovieDto.from(upsertFromTmdb(tm, lang));
@@ -95,6 +100,7 @@ public class MovieService {
 
         m.setTitle(t.title());
         m.setOriginalTitle(t.original_title());
+        m.setDescription(t.overview()); // EKLENDİ
 
         if (nonNull(t.release_date()) && t.release_date().length() >= 4) {
             try {

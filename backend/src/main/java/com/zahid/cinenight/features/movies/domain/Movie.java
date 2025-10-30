@@ -49,6 +49,9 @@ public class Movie {
     @Column(length = 255)
     private String genres;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @CreationTimestamp
     @Column(name = "fetched_at", nullable = false, updatable = false)
     private Instant fetchedAt;

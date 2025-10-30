@@ -4,7 +4,8 @@ export type TmdbGenre = { id: number; name: string };
 
 export type TmdbMovie = {
     id: number;
-    title: string;
+    title?: string;
+    name?: string;
     original_title?: string;
     original_language?: string;
     release_date?: string | null;
@@ -13,6 +14,7 @@ export type TmdbMovie = {
     backdrop_path?: string | null;
     genres?: TmdbGenre[];
     genre_ids?: number[];
+    overview?: string;
 };
 
 export type TmdbMoviePage = {
@@ -30,6 +32,7 @@ export type MovieDto = {
     backdropPath?: string | null;
     language?: string | null;
     releaseYear?: number | null;
+    description?: string | null;
 };
 
 export type PagedMovies = {
@@ -50,6 +53,7 @@ export type HomeTopMovie = {
     avgRating: number;
     viewCount: number;
     score: number;
+    description?: string | null;
 };
 
 export function tmdbTrending(lang = "tr-TR", page = 1) {

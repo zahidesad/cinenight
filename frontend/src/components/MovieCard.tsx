@@ -17,25 +17,36 @@ type TopMovie = {
     releaseYear?: number | null;
 };
 
+type BaseProps = {
+    onCardClick?: (tmdbId: number) => void;
+};
+
 type Props =
-    | { variant?: "tmdb"; movie: AnyMovie } // default
-    | { variant: "top";  movie: TopMovie };
+    (
+        | { variant?: "tmdb"; movie: AnyMovie } // default
+        | { variant: "top"; movie: TopMovie }
+        ) & BaseProps;
+
 
 export default function MovieCard(props: Props) {
+    const { onCardClick } = props;
     const [busy, setBusy] = useState(false);
 
-    // DÜZELTME: Hem `tmdbId` hem de `id` alanlarını kontrol et
     const tmdbId = (props.movie as AnyMovie).tmdbId || (props.movie as AnyMovie).id;
 
-    // DÜZELTME: Hem `title` hem de `name` alanlarını kontrol et
     const title = (props.movie as AnyMovie).title || (props.movie as AnyMovie).name || "Başlık Yok";
 
-    // DÜZELTME: Hem `posterPath` hem de `poster_path` alanlarını kontrol et
     const poster = (props.movie as AnyMovie).posterPath || (props.movie as AnyMovie).poster_path;
 
     const posterUrl = poster ? `${IMG}/w342${poster}` : "/no-poster.svg";
 
     const onClick = async () => {
+        // EKLENDİ: Eğer onCardClick prop'u varsa, modalı açmak için çağır.
+        if (onCardClick) {
+            onCardClick(tmdbId);
+        }
+
+        // Mevcut izlenme kaydı mantığını koru
         try {
             setBusy(true);
             await MoviesApi.recordView(tmdbId);

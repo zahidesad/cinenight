@@ -1,15 +1,19 @@
-import { Search, ChevronRight } from "lucide-react";
+import { Search } from "lucide-react";
 import MovieCard from "@/components/MovieCard";
 import { SkeletonBanner, SkeletonRow, EmptyRow } from "./Skeletons";
+import {MovieDto, PagedMovies, TmdbMovie} from "@/api/movies";
+
+type FeaturedMovie = TmdbMovie & { name?: string };
 
 type Props = {
-    featured?: any;
+    featured?: FeaturedMovie | null;
     q?: string;
-    onQueryChange?: (v: string) => void; // opsiyonel
+    onQueryChange?: (v: string) => void;
     isSearching: boolean;
     searchErr: string | null;
-    searchResults: { results?: any[] } | null;
-    onRetrySearch?: () => void;          // opsiyonel
+    searchResults: PagedMovies | null;
+    onRetrySearch?: () => void;
+    onMovieClick?: (tmdbId: number) => void;
 };
 
 export default function HomeHero({
@@ -20,9 +24,10 @@ export default function HomeHero({
                                      searchErr,
                                      searchResults,
                                      onRetrySearch,
+                                     onMovieClick,
                                  }: Props) {
     const query = (q ?? "").trim();
-    const results = searchResults?.results ?? [];
+    const results: MovieDto[] = searchResults?.results ?? [];
     const showDropdown = query.length > 0 && (isSearching || !!searchErr || !!searchResults);
 
     return (
@@ -64,11 +69,12 @@ export default function HomeHero({
 
                             {!isSearching && !searchErr && results.length > 0 && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {results.map((m: any) => (
+                                    {results.map((m: MovieDto) => ( // GÜNCELLENDİ: m: MovieDto
                                         <MovieCard
-                                            key={`s-${m.tmdbId ?? m.id ?? `${m.title}-${m.release_date ?? ""}`}`}
-                                            movie={m}
+                                            key={`s-${m.tmdbId}`}
+                                            movie={m as never}
                                             variant="tmdb"
+                                            onCardClick={onMovieClick}
                                         />
                                     ))}
                                 </div>
@@ -81,7 +87,7 @@ export default function HomeHero({
             <div className="card p-0 overflow-hidden flex">
                 {featured ? (
                     <div className="flex-1 flex items-end bg-gradient-to-t from-black/80 to-transparent relative">
-                        {featured.backdrop_path ? (
+                        {featured?.backdrop_path ? (
                             <img
                                 src={`https://image.tmdb.org/t/p/w780${featured.backdrop_path}`}
                                 className="absolute inset-0 h-full w-full object-cover"
@@ -93,20 +99,9 @@ export default function HomeHero({
                         )}
                         <div className="relative p-5">
                             <h3 className="text-xl font-semibold text-white">
-                                {featured.title ?? featured.name ?? "Seçili film"}
+                                {featured?.title ?? featured?.name ?? "Seçili film"}
                             </h3>
-                            <div className="mt-3">
-                                <a
-                                    href="#tabs"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        document.getElementById("tabs")?.scrollIntoView({ behavior: "smooth" });
-                                    }}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600/90 px-4 py-2 text-white hover:bg-indigo-600 transition"
-                                >
-                                    Keşfet <ChevronRight className="h-4 w-4" />
-                                </a>
-                            </div>
+                            {/* ... */}
                         </div>
                     </div>
                 ) : (

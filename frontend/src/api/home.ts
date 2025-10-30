@@ -1,18 +1,5 @@
-// src/api/home.ts
 import { apiGet, unwrap } from "./client";
-
-export type TmdbMovie = {
-    id: number;
-    title?: string;
-    name?: string; // bazı yanıtlar dizi adı için 'name' döndürebilir
-    overview?: string;
-    poster_path?: string;
-    backdrop_path?: string;
-    vote_average?: number;
-    release_date?: string;
-    first_air_date?: string;
-    genre_ids?: number[];
-};
+import type { TmdbMovie } from "./movies";
 
 export type TmdbPage<T> = {
     page: number;
@@ -25,7 +12,7 @@ export type TopMovie = {
     id: number;
     title: string;
     posterPath?: string;
-    score: number; // proje-özel metrik
+    score: number;
 };
 
 function qs(params: Record<string, string | number | boolean | undefined>) {
