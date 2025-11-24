@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { UserDto, logout } from '@/api/auth';
+import { LayoutDashboard, LogOut } from 'lucide-react'; // İkonları ekleyelim
 
 interface RootLayoutProps {
     user: UserDto | null;
@@ -17,65 +18,93 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
     const isHome = pathname === '/';
 
     return (
-        <div className="min-h-screen bg-gray-950 text-gray-200">
-            <header className="sticky top-0 z-20 border-b border-white/10 bg-gray-950/70 backdrop-blur">
-                <nav className="container mx-auto flex h-16 items-center justify-between px-4">
-                    <Link to="/" className="text-xl font-bold text-indigo-400">🎬 CineNight</Link>
+        <div className="min-h-screen bg-gray-950 text-gray-200 font-sans selection:bg-indigo-500/30">
+            <header className={`sticky top-0 z-30 border-b transition-colors duration-300 ${isHome ? 'border-white/5 bg-gray-950/80 backdrop-blur-md' : 'border-white/10 bg-gray-900/95 backdrop-blur-sm'}`}>
+                <nav className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+                    <Link to="/" className="flex items-center gap-2 group">
+                        <span className="text-2xl">🎬</span>
+                        <span className="text-lg font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent group-hover:to-white transition-all">
+                            CineNight
+                        </span>
+                    </Link>
 
-                    <div className="hidden items-center gap-6 md:flex">
-                        <a href="/#features" className="text-sm text-gray-300 hover:text-white transition">Özellikler</a>
-                        <a href="/#flow" className="text-sm text-gray-300 hover:text-white transition">Nasıl Çalışır</a>
-                        <Link to="/try" className="text-sm text-gray-300 hover:text-white transition">Canlı Demo</Link>
-                    </div>
-
-                    <div className="flex items-center gap-3">
+                    {/* Masaüstü Menü */}
+                    <div className="hidden items-center gap-8 md:flex">
                         {user ? (
-                            <>
-                                <span className="hidden text-sm text-gray-300 sm:block">
-                                    Hoş geldin, {user.displayName ?? user.email}
-                                </span>
-                                <button
-                                    onClick={handleLogout}
-                                    className="rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700"
-                                >
-                                    Çıkış Yap
-                                </button>
-                            </>
-                        ) : (
+                            // GİRİŞ YAPMIŞ KULLANICI İÇİN MENÜ
                             <>
                                 <Link
+                                    to="/dashboard"
+                                    className={`text-sm font-medium transition-colors flex items-center gap-2 ${pathname === '/dashboard' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`}
+                                >
+                                    <LayoutDashboard className="w-4 h-4" />
+                                    Gruplarım
+                                </Link>
+                                <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                                    Canlı Demo
+                                </Link>
+                            </>
+                        ) : (
+                            // ZİYARETÇİ İÇİN MENÜ
+                            <>
+                                <a href="/#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Özellikler</a>
+                                <a href="/#flow" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Nasıl Çalışır</a>
+                                <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Canlı Demo</Link>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Sağ Taraf (Profil / Login) */}
+                    <div className="flex items-center gap-4">
+                        {user ? (
+                            <div className="flex items-center gap-4 pl-6 border-l border-white/10">
+                                <div className="hidden text-right sm:block">
+                                    <div className="text-sm font-medium text-white leading-none">{user.displayName}</div>
+                                    <div className="text-xs text-gray-500 mt-1">{user.email}</div>
+                                </div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="group relative rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                                    title="Çıkış Yap"
+                                >
+                                    <LogOut className="h-5 w-5" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <Link
                                     to="/login"
-                                    className="rounded-md px-4 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800"
+                                    className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-3 py-2"
                                 >
                                     Giriş
                                 </Link>
                                 <Link
                                     to="/register"
-                                    className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                                    className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-gray-950 transition hover:bg-gray-200"
                                 >
                                     Kayıt Ol
                                 </Link>
-                                <Link
-                                    to="/try"
-                                    className="hidden rounded-md bg-fuchsia-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-fuchsia-700 md:block"
-                                >
-                                    Hemen Dene
-                                </Link>
-                            </>
+                            </div>
                         )}
                     </div>
                 </nav>
                 {isHome && (
-                    <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+                    <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
                 )}
             </header>
 
-            <main className="container mx-auto p-4 md:p-8">
-                <Outlet />
+            <main className="flex-1">
+                <div className={`mx-auto ${pathname === '/' ? '' : 'container p-4 md:p-8'}`}>
+                    <Outlet />
+                </div>
             </main>
 
-            <footer className="border-t border-white/10 py-8 text-center text-sm text-gray-400">
-                © {new Date().getFullYear()} CineNight · Film Gecesi Planlayıcı
+            <footer className="border-t border-white/5 bg-gray-950 py-12 mt-auto">
+                <div className="container mx-auto px-4 text-center">
+                    <p className="text-sm text-gray-500">
+                        © {new Date().getFullYear()} CineNight · Film Gecesi Planlayıcı
+                    </p>
+                </div>
             </footer>
         </div>
     );

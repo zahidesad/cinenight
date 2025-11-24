@@ -7,7 +7,10 @@ import com.zahid.cinenight.features.movies.dto.TmdbMoviePage;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -65,6 +68,8 @@ public class MovieService {
 
     @Cacheable(value = "movieById", key = "#tmdbId")
     public MovieDto byId(int tmdbId, String lang) {
+        // Cache hit olsa bile DB'den emin olmak için basit kontrol (Cache config hallediyor ama)
+        // Burada DB kontrolünü transactional olmayan bir akışta yapıyoruz.
         var existing = movies.findByTmdbId(tmdbId);
         if (existing.isPresent() && existing.get().getDescription() != null) {
             return MovieDto.from(existing.get());
@@ -96,11 +101,76 @@ public class MovieService {
         );
     }
 
-    @Transactional
-    public synchronized Movie upsertFromTmdb(TmdbMovie t, String lang) {
-        var m = movies.findByTmdbId(t.id()).orElseGet(Movie::new);
-        if (m.getId() == null) m.setTmdbId(t.id());
+    /**
+     * DÜZELTME: Bu metodun üzerindeki @Transactional kaldırıldı.
+     * Neden? Çünkü bu metod bir "Orchestrator" (Yönetici).
+     * İçinde createMovieSafely çağırıyor. Eğer o metod hata verirse (Duplicate),
+     * o metodun kendi transaction'ı rollback oluyor.
+     * Eğer bu metodun da transaction'ı olsaydı, içteki hata bunu da "rollback-only" yapardı
+     * ve catch bloğunda kurtarsak bile "UnexpectedRollbackException" alırdık.
+     *
+     * Artık transaction yönetimi sadece uç metodlarda (create, update, get).
+     */
+    public Movie upsertFromTmdb(TmdbMovie t, String lang) {
+        try {
+            // Önce okumayı dene (Transaction yok, salt okuma)
+            var existing = movies.findByTmdbId(t.id());
 
+            if (existing.isPresent()) {
+                return self.updateAndSave(existing.get(), t, lang);
+            } else {
+                return self.createMovieSafely(t, lang);
+            }
+        } catch (DataIntegrityViolationException e) {
+            // 1. INSERT ÇAKIŞMASI: Başkası ekledi.
+            // Sorun yok, createMovieSafely transaction'ı kapandı bitti.
+            // Şimdi tertemiz bir sayfa açıp var olanı çekiyoruz.
+            Movie m = self.getMovieSafely(t.id());
+            try {
+                return self.updateAndSave(m, t, lang);
+            } catch (ObjectOptimisticLockingFailureException ex) {
+                // 2. UPDATE ÇAKIŞMASI
+                return self.getMovieSafely(t.id());
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            // 3. UPDATE ÇAKIŞMASI
+            return self.getMovieSafely(t.id());
+        }
+    }
+
+    /**
+     * Taze veri okumak için izole transaction.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public Movie getMovieSafely(Integer tmdbId) {
+        return movies.findByTmdbId(tmdbId)
+                .orElseThrow(() -> new IllegalStateException("Film veritabanında var ama okunamadı: " + tmdbId));
+    }
+
+    /**
+     * İzole insert işlemi. Hata verirse sadece bu scope rollback olur.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Movie createMovieSafely(TmdbMovie t, String lang) {
+        if (movies.findByTmdbId(t.id()).isPresent()) {
+            throw new DataIntegrityViolationException("Movie already exists");
+        }
+        Movie m = new Movie();
+        m.setTmdbId(t.id());
+        mapFields(m, t, lang);
+        return movies.saveAndFlush(m);
+    }
+
+    /**
+     * Update işlemi için transaction (Ana akışta transaction yoksa burada başlasın diye).
+     */
+    @Transactional
+    public Movie updateAndSave(Movie m, TmdbMovie t, String lang) {
+        mapFields(m, t, lang);
+        return movies.save(m);
+    }
+
+    private void mapFields(Movie m, TmdbMovie t, String lang) {
         String newTitle = t.title();
         if (newTitle == null) {
             newTitle = t.name();
@@ -109,7 +179,7 @@ public class MovieService {
             newTitle = "Başlık Bilinmiyor";
         }
 
-        m.setTitle(t.title() != null ? t.title() : t.name());
+        m.setTitle(newTitle);
         m.setOriginalTitle(t.original_title());
         m.setDescription(t.overview());
 
@@ -137,7 +207,6 @@ public class MovieService {
         }
 
         m.setFetchedAt(Instant.now());
-        return movies.save(m);
     }
 
     private Movie ensureMovieEntity(int tmdbId, String lang) {
@@ -163,5 +232,4 @@ public class MovieService {
         var vote = new MovieVote(m, rating);
         votes.save(vote);
     }
-
 }

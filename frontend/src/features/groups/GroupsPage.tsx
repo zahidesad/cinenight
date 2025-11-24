@@ -1,0 +1,110 @@
+import { useEffect, useState } from 'react';
+import { fetchMyGroups, type GroupDto } from '@/api/groups';
+import { Plus, Users, Shield, User } from 'lucide-react';
+import CreateGroupModal from './components/CreateGroupModal';
+
+export default function GroupsPage() {
+    const [groups, setGroups] = useState<GroupDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const loadGroups = async () => {
+        setLoading(true);
+        const res = await fetchMyGroups();
+        if (res.ok && res.data) {
+            setGroups(res.data);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        loadGroups();
+    }, []);
+
+    return (
+        <div className="max-w-6xl mx-auto space-y-8">
+            {/* Üst Başlık ve Buton */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-white">Gruplarım</h1>
+                    <p className="text-gray-400 mt-1">Film gecelerini planladığın topluluklar.</p>
+                </div>
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-700 shadow-lg shadow-indigo-500/20"
+                >
+                    <Plus className="h-5 w-5" />
+                    Yeni Grup Oluştur
+                </button>
+            </div>
+
+            {/* Yükleniyor */}
+            {loading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-40 rounded-xl bg-gray-800/50 animate-pulse border border-white/5" />
+                    ))}
+                </div>
+            )}
+
+            {/* Boş Durum */}
+            {!loading && groups.length === 0 && (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-700 bg-gray-900/30 py-20 text-center">
+                    <div className="rounded-full bg-gray-800 p-4 mb-4">
+                        <Users className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">Henüz bir grubun yok</h3>
+                    <p className="mt-2 text-gray-400 max-w-md">
+                        Arkadaşlarınla film seçmek ve etkinlik planlamak için ilk grubunu oluştur.
+                    </p>
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="mt-6 text-indigo-400 hover:text-indigo-300 font-medium underline underline-offset-4"
+                    >
+                        Hemen bir tane kur
+                    </button>
+                </div>
+            )}
+
+            {/* Grup Listesi */}
+            {!loading && groups.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {groups.map(group => (
+                        <div
+                            key={group.id}
+                            className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-gray-900/60 p-6 hover:border-indigo-500/50 transition-all hover:shadow-lg hover:shadow-indigo-500/10 cursor-pointer"
+                        >
+                            <div>
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className={`p-3 rounded-xl ${group.role === 'OWNER' ? 'bg-amber-500/10 text-amber-500' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                                        {group.role === 'OWNER' ? <Shield className="h-6 w-6" /> : <Users className="h-6 w-6" />}
+                                    </div>
+                                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
+                                        {group.role}
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">{group.name}</h3>
+                                <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem]">
+                                    {group.description || 'Açıklama yok.'}
+                                </p>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-white/5 flex items-center text-sm text-gray-500">
+                                <User className="h-4 w-4 mr-1.5" />
+                                <span>Üye sayısı yakında...</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Modal */}
+            {isCreateModalOpen && (
+                <CreateGroupModal
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSuccess={loadGroups}
+                />
+            )}
+        </div>
+    );
+}

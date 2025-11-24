@@ -9,6 +9,7 @@ import RegisterPage from '@/features/auth/RegisterPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
 import TryDemoPage from '@/features/home/TryDemoPage';
+import GroupsPage from '@/features/groups/GroupsPage'; // <--- Import et
 
 export default function AppRoutes() {
     const [user, setUser] = useState<UserDto | null>(null);
@@ -45,6 +46,7 @@ export default function AppRoutes() {
             <Route element={<RootLayout user={user} onLogout={handleLogout} />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/try" element={<TryDemoPage />} />
+                <Route path="/dashboard" element={<GroupsPage />} />
             </Route>
 
             <Route element={<AuthLayout />}>
