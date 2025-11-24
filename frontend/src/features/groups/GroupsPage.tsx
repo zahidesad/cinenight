@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { fetchMyGroups, type GroupDto } from '@/api/groups';
 import { Plus, Users, Shield, User } from 'lucide-react';
 import CreateGroupModal from './components/CreateGroupModal';
+import {useNavigate} from "react-router-dom";
 
 export default function GroupsPage() {
+    const navigate = useNavigate();
     const [groups, setGroups] = useState<GroupDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function GroupsPage() {
                     {groups.map(group => (
                         <div
                             key={group.id}
+                            onClick={() => navigate(`/groups/${group.id}`)}
                             className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-gray-900/60 p-6 hover:border-indigo-500/50 transition-all hover:shadow-lg hover:shadow-indigo-500/10 cursor-pointer"
                         >
                             <div>

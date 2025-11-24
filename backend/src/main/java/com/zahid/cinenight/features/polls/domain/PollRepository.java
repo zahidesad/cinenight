@@ -6,5 +6,5 @@ import java.util.Optional;
 
 public interface PollRepository extends JpaRepository<Poll, Long> {
     Optional<Poll> findByPublicToken(String publicToken);
-
+    Optional<Poll> findFirstByGroupIdAndIsOpenTrueOrderByCreatedAtDesc(Long groupId);
 }

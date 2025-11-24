@@ -48,4 +48,16 @@ public class GroupController {
         service.addMember(req, uid(p));
         return ApiResponse.ok("ok");
     }
+
+    @GetMapping("/explore")
+    public ApiResponse<List<GroupDto>> explore() {
+        return ApiResponse.ok(service.explore());
+    }
+
+    @PostMapping("/{groupId}/join")
+    public ApiResponse<String> join(@AuthenticationPrincipal UserDetails p,
+                                    @PathVariable Long groupId) {
+        service.join(groupId, uid(p));
+        return ApiResponse.ok("joined");
+    }
 }

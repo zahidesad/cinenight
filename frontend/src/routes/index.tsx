@@ -9,7 +9,10 @@ import RegisterPage from '@/features/auth/RegisterPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
 import TryDemoPage from '@/features/home/TryDemoPage';
-import GroupsPage from '@/features/groups/GroupsPage'; // <--- Import et
+import GroupsPage from '@/features/groups/GroupsPage';
+import GroupDetailPage from '@/features/groups/GroupDetailPage';
+import JoinGroupPage from '@/features/groups/JoinGroupPage';
+import ExplorePage from '@/features/groups/ExplorePage';
 
 export default function AppRoutes() {
     const [user, setUser] = useState<UserDto | null>(null);
@@ -47,6 +50,7 @@ export default function AppRoutes() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/try" element={<TryDemoPage />} />
                 <Route path="/dashboard" element={<GroupsPage />} />
+                <Route path="/explore" element={<ExplorePage />} />
             </Route>
 
             <Route element={<AuthLayout />}>
@@ -54,6 +58,8 @@ export default function AppRoutes() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/groups/:groupId" element={<GroupDetailPage />} />
+                <Route path="/join/:groupId" element={<JoinGroupPage />} />
             </Route>
         </Routes>
     );

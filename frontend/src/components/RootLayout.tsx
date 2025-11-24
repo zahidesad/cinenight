@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { UserDto, logout } from '@/api/auth';
-import { LayoutDashboard, LogOut } from 'lucide-react'; // İkonları ekleyelim
+import { LayoutDashboard, LogOut } from 'lucide-react';
 
 interface RootLayoutProps {
     user: UserDto | null;
@@ -28,10 +28,8 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                         </span>
                     </Link>
 
-                    {/* Masaüstü Menü */}
                     <div className="hidden items-center gap-8 md:flex">
                         {user ? (
-                            // GİRİŞ YAPMIŞ KULLANICI İÇİN MENÜ
                             <>
                                 <Link
                                     to="/dashboard"
@@ -40,21 +38,19 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                                     <LayoutDashboard className="w-4 h-4" />
                                     Gruplarım
                                 </Link>
-                                <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                                    Canlı Demo
+                                <Link to="/explore" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                                    Keşfet
                                 </Link>
                             </>
                         ) : (
-                            // ZİYARETÇİ İÇİN MENÜ
                             <>
+                                <Link to="/explore" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Keşfet</Link>
                                 <a href="/#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Özellikler</a>
-                                <a href="/#flow" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Nasıl Çalışır</a>
                                 <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Canlı Demo</Link>
                             </>
                         )}
                     </div>
 
-                    {/* Sağ Taraf (Profil / Login) */}
                     <div className="flex items-center gap-4">
                         {user ? (
                             <div className="flex items-center gap-4 pl-6 border-l border-white/10">

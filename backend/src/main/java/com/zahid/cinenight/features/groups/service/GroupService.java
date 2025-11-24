@@ -13,7 +13,7 @@ import java.util.List;
 @Service
 public class GroupService {
 
-    public record CreateGroupReq(@NotBlank String name, String description) {}
+    public record CreateGroupReq(@NotBlank String name, String description, String visibility) {}
     public record GroupDto(Long id, String name, String description, String visibility, String role) {
         public static GroupDto of(Group g, String role) {
             return new GroupDto(g.getId(), g.getName(), g.getDescription(),
@@ -37,6 +37,17 @@ public class GroupService {
         Group g = new Group();
         g.setName(req.name());
         g.setDescription(req.description());
+
+        try {
+            if (req.visibility() != null) {
+                g.setVisibility(GroupVisibility.valueOf(req.visibility()));
+            } else {
+                g.setVisibility(GroupVisibility.LINK);
+            }
+        } catch (Exception e) {
+            g.setVisibility(GroupVisibility.LINK);
+        }
+
         g.setCreatedBy(users.findById(ownerUserId).orElse(null));
         groups.save(g);
 
@@ -48,6 +59,26 @@ public class GroupService {
         members.save(m);
 
         return GroupDto.of(g, "OWNER");
+    }
+
+    @Transactional
+    public void join(Long groupId, Long userId) {
+        Group g = groups.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
+
+        if (members.existsById(new GroupMemberId(groupId, userId))) {
+            return;
+        }
+
+        if (g.getVisibility() == GroupVisibility.PRIVATE) {
+            throw new IllegalArgumentException("Bu grup dışarıdan katılıma kapalı.");
+        }
+
+        GroupMember m = new GroupMember();
+        m.setId(new GroupMemberId(groupId, userId));
+        m.setGroup(g);
+        m.setUser(users.findById(userId).orElseThrow());
+        m.setRole(GroupRole.MEMBER);
+        members.save(m);
     }
 
     @Transactional
@@ -69,11 +100,17 @@ public class GroupService {
         members.save(m);
     }
 
-    /** Kullanıcının tüm grupları (role ile) */
     public List<GroupDto> myGroups(Long userId) {
         return members.findAll().stream()
                 .filter(m -> m.getUser().getId().equals(userId))
                 .map(m -> GroupDto.of(m.getGroup(), m.getRole().name()))
+                .toList();
+    }
+
+    public List<GroupDto> explore() {
+        return groups.findTop20ByVisibilityNotOrderByCreatedAtDesc(GroupVisibility.PRIVATE)
+                .stream()
+                .map(g -> GroupDto.of(g, "VISITOR"))
                 .toList();
     }
 }

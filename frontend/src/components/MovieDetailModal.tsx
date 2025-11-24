@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { X, Loader, AlertCircle } from "lucide-react";
+import { X, Loader2, AlertCircle, Users, Check, ChevronRight, Info } from "lucide-react"; // Info ikonu eklendi
 import { MoviesApi, type MovieDto } from "@/api/movies";
+import { fetchMyGroups, type GroupDto } from "@/api/groups";
+import { suggestMovie } from "@/api/polls";
 
 const IMG_BASE = import.meta.env.VITE_TMDB_IMAGE_BASE ?? "https://image.tmdb.org/t/p";
 
@@ -9,11 +11,22 @@ type Props = {
     onClose: () => void;
 };
 
+// UI Durumları güncellendi
+type Mode = 'DETAIL' | 'SELECT_GROUP' | 'SUCCESS' | 'EXISTS';
+
 export default function MovieDetailModal({ tmdbId, onClose }: Props) {
+    const [mode, setMode] = useState<Mode>('DETAIL');
+
+    // Veriler
     const [movie, setMovie] = useState<MovieDto | null>(null);
+    const [groups, setGroups] = useState<GroupDto[]>([]);
+
+    // Loading/Error State
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
 
+    // 1. Filmi Yükle
     useEffect(() => {
         async function fetchDetails() {
             setLoading(true);
@@ -29,74 +42,190 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
         fetchDetails();
     }, [tmdbId]);
 
+    // 2. Grupları Yükle
+    const handleStartSuggest = async () => {
+        setActionLoading(true);
+        const res = await fetchMyGroups();
+        setActionLoading(false);
+
+        if (res.ok) {
+            setGroups(res.data);
+            setMode('SELECT_GROUP');
+        } else {
+            alert("Gruplar yüklenemedi");
+        }
+    };
+
+    // 3. Grup Seçilince Backend'e Gönder
+    const handleSelectGroup = async (groupId: number) => {
+        if (!movie) return;
+        setActionLoading(true);
+
+        const res = await suggestMovie(groupId, movie.tmdbId, movie.title);
+
+        setActionLoading(false);
+
+        if (res.ok) {
+            // Backend'den gelen cevaba göre durum değiştir
+            if (res.data === 'exists') {
+                setMode('EXISTS');
+            } else {
+                setMode('SUCCESS');
+            }
+
+            // 1.5 saniye sonra kapat
+            setTimeout(() => onClose(), 1500);
+        } else {
+            alert(res.error || "İşlem başarısız.");
+        }
+    };
+
     const posterUrl = movie?.posterPath ? `${IMG_BASE}/w500${movie.posterPath}` : "/no-poster.svg";
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             onClick={onClose}
         >
             <div
-                className="card relative w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4"
+                className="card relative w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Kapat Butonu */}
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-gray-800/70 text-gray-300 hover:text-white"
+                    className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 transition"
                 >
                     <X className="h-5 w-5" />
                 </button>
 
-                {/* Yükleniyor durumu */}
                 {loading && (
-                    <div className="flex h-96 items-center justify-center gap-2 text-gray-300">
-                        <Loader className="h-5 w-5 animate-spin" />
-                        <span>Detaylar yükleniyor...</span>
+                    <div className="flex h-80 items-center justify-center text-gray-400 gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span>Film bilgileri alınıyor...</span>
                     </div>
                 )}
 
-                {/* Hata durumu */}
-                {error && (
-                    <div className="flex h-96 flex-col items-center justify-center gap-2 text-red-300">
-                        <AlertCircle className="h-6 w-6" />
-                        <span>{error}</span>
-                        <button onClick={onClose} className="mt-4 text-sm text-gray-200 underline">Kapat</button>
+                {!loading && error && (
+                    <div className="flex h-80 flex-col items-center justify-center text-red-400 gap-2 p-6 text-center">
+                        <AlertCircle className="h-8 w-8" />
+                        <p>{error}</p>
                     </div>
                 )}
 
-                {/* Başarılı durum */}
-                {movie && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-1">
+                {!loading && movie && (
+                    <div className="flex flex-col md:flex-row h-full">
+                        <div className="w-full md:w-2/5 h-64 md:h-auto relative bg-gray-900">
                             <img
                                 src={posterUrl}
                                 alt={movie.title}
-                                className="w-full h-auto rounded-l-xl object-cover"
+                                className="absolute inset-0 w-full h-full object-cover opacity-90"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent md:bg-gradient-to-r" />
                         </div>
-                        <div className="md:col-span-2 p-6 pt-10 md:pt-6 space-y-3">
-                            <h2 className="text-2xl font-bold text-white">{movie.title}</h2>
 
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
-                                {movie.releaseYear && (
-                                    <span>🗓️ {movie.releaseYear}</span>
-                                )}
-                                {movie.language && (
-                                    <span>🌍 {movie.language.toUpperCase()}</span>
-                                )}
-                            </div>
+                        <div className="flex-1 p-6 flex flex-col bg-gray-900">
 
-                            <p className="text-gray-300">
-                                {movie.description || "Açıklama bulunamadı."}
-                            </p>
+                            {/* MOD 1: Detay */}
+                            {mode === 'DETAIL' && (
+                                <>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <h2 className="text-2xl font-bold text-white mb-2">{movie.title}</h2>
+                                        <div className="flex flex-wrap gap-3 text-sm text-gray-400 mb-4">
+                                            {movie.releaseYear && <span>📅 {movie.releaseYear}</span>}
+                                            {movie.language && <span className="uppercase">🗣️ {movie.language}</span>}
+                                        </div>
+                                        <p className="text-gray-300 text-sm leading-relaxed">
+                                            {movie.description || "Açıklama bulunamadı."}
+                                        </p>
+                                    </div>
 
-                            {/* TODO: Oylama ve diğer butonlar buraya eklenebilir */}
-                            <div className="pt-4">
-                                <button className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">
-                                    Oylamaya Ekle
-                                </button>
-                            </div>
+                                    <div className="pt-6 mt-4 border-t border-white/10">
+                                        <button
+                                            onClick={handleStartSuggest}
+                                            disabled={actionLoading}
+                                            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50"
+                                        >
+                                            {actionLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <Users className="h-5 w-5" />}
+                                            Gruba Öner / Oylamaya Ekle
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* MOD 2: Grup Seçimi */}
+                            {mode === 'SELECT_GROUP' && (
+                                <div className="flex flex-col h-full">
+                                    <div className="mb-4">
+                                        <h3 className="text-lg font-semibold text-white">Hangi gruba eklensin?</h3>
+                                        <p className="text-sm text-gray-400">Bu film seçtiğin grubun aktif anketine eklenecek.</p>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto space-y-2 -mx-2 px-2">
+                                        {groups.length === 0 ? (
+                                            <div className="text-center py-8 text-gray-500">
+                                                Henüz hiç grubun yok. <br />
+                                                <span className="text-xs">Önce "Gruplarım" sayfasından bir grup oluştur.</span>
+                                            </div>
+                                        ) : (
+                                            groups.map(g => (
+                                                <button
+                                                    key={g.id}
+                                                    disabled={actionLoading}
+                                                    onClick={() => handleSelectGroup(g.id)}
+                                                    className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 transition text-left group"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                                                            <Users className="h-4 w-4" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-medium text-gray-200">{g.name}</div>
+                                                            <div className="text-xs text-gray-500">{g.role}</div>
+                                                        </div>
+                                                    </div>
+                                                    {actionLoading ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                                                    ) : (
+                                                        <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-white transition" />
+                                                    )}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    <div className="pt-4 mt-auto">
+                                        <button
+                                            onClick={() => setMode('DETAIL')}
+                                            className="w-full py-2 text-sm text-gray-400 hover:text-white transition"
+                                        >
+                                            Geri Dön
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* MOD 3: Başarılı */}
+                            {mode === 'SUCCESS' && (
+                                <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in duration-300">
+                                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
+                                        <Check className="h-8 w-8" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Eklendi!</h3>
+                                    <p className="text-gray-400 mt-2">Film oylamaya başarıyla eklendi.</p>
+                                </div>
+                            )}
+
+                            {/* MOD 4: Zaten Var */}
+                            {mode === 'EXISTS' && (
+                                <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in duration-300">
+                                    <div className="w-16 h-16 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 mb-4">
+                                        <Info className="h-8 w-8" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Zaten Listede</h3>
+                                    <p className="text-gray-400 mt-2">Bu film zaten oylama listesinde mevcut.</p>
+                                </div>
+                            )}
+
                         </div>
                     </div>
                 )}

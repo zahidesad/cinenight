@@ -65,4 +65,21 @@ public class PollController {
     public ApiResponse<PollDto> byToken(@PathVariable String token) {
         return ApiResponse.ok(service.getByPublicToken(token));
     }
+
+    @PostMapping("/suggest")
+    public ApiResponse<String> suggest(@AuthenticationPrincipal UserDetails p,
+                                       @RequestBody @Valid PollService.SuggestMovieReq req) {
+        String result = service.suggest(req, uid(p));
+        return ApiResponse.ok(result);
+    }
+    @GetMapping("/group/{groupId}/active")
+    public ApiResponse<PollService.PollDetailDto> getActivePoll(@AuthenticationPrincipal UserDetails p,
+                                                                @PathVariable Long groupId) {
+        try {
+            return ApiResponse.ok(service.getActivePoll(groupId, uid(p)));
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
 }
