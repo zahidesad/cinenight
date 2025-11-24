@@ -14,23 +14,18 @@ export default function JoinGroupPage() {
         async function checkAndJoin() {
             if (!groupId) return;
 
-            // 1. Giriş yapmış mı?
             const userRes = await me();
             if (!userRes.ok) {
-                // Giriş yapmamışsa login'e at, dönüşte buraya gelsin
                 navigate(`/login?redirect=/join/${groupId}`);
                 return;
             }
 
-            // 2. Zaten üye mi?
             const groupsRes = await fetchMyGroups();
             if (groupsRes.ok && groupsRes.data?.find(g => g.id === Number(groupId))) {
-                // Zaten üye, direkt detaya git
                 navigate(`/groups/${groupId}`);
                 return;
             }
 
-            // 3. Katılma İsteği At (DÜZELTME: joinGroup kullanıldı)
             setStatus('JOINING');
             const joinRes = await joinGroup(Number(groupId));
 

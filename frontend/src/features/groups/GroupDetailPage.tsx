@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
 import { ChevronLeft, Loader2, Users, Trophy, Share2, Check, FileText, Star } from 'lucide-react';
-import MovieDetailModal from '@/components/MovieDetailModal'; // MODAL IMPORT
+import MovieDetailModal from '@/components/MovieDetailModal';
 
 const IMG = import.meta.env.VITE_TMDB_IMAGE_BASE ?? "https://image.tmdb.org/t/p";
 
@@ -22,7 +22,7 @@ export default function GroupDetailPage() {
             setError(null);
         } catch (err: unknown) {
             console.error(err);
-            setError("Bu grupta henüz aktif bir anket yok. Bir film önererek başlatabilirsin.");
+            setError("Bu grupta henüz aktif bir anket yok veya bir hata oluştu.");
         } finally {
             setLoading(false);
         }
@@ -36,12 +36,11 @@ export default function GroupDetailPage() {
         if (!poll) return;
         setVotingId(optionId);
 
-        // Backend zaten "varsa güncelle, yoksa ekle" yapıyor.
-        // Frontend'de sadece state'i güncellemek yeterli.
+        // Backend "varsa güncelle, yoksa ekle" mantığında çalışıyor.
         const res = await castVote(poll.id, optionId);
 
         if (res.ok) {
-            await loadPoll(); // Güncel oy sayılarını çek
+            await loadPoll(); // Güncel oy sayılarını ve 'isVotedByMe' durumunu çek
         }
         setVotingId(null);
     };
@@ -53,7 +52,13 @@ export default function GroupDetailPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    if (loading) return <div className="flex h-[80vh] items-center justify-center text-gray-400"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    if (loading) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center text-gray-400">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
 
     if (error || !poll) {
         return (
@@ -71,7 +76,7 @@ export default function GroupDetailPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 px-4">
-            {/* Header */}
+            {/* --- Header --- */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
                 <div className="flex items-center gap-4">
                     <Link to="/dashboard" className="p-2 rounded-full hover:bg-white/5 text-gray-400 transition">
@@ -95,8 +100,8 @@ export default function GroupDetailPage() {
                 </button>
             </div>
 
-            {/* Etkinlik Bilgi Kartı */}
-            <div className="bg-gray-900/40 border border-white/5 p-6 rounded-2xl flex flex-col md:flex-row gap-6">
+            {/* --- Etkinlik Detay Kartı --- */}
+            <div className="bg-gray-900/40 border border-white/5 p-6 rounded-2xl flex flex-col md:flex-row gap-6 shadow-inner">
                 <div className="p-3 h-fit rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-300">
                     <FileText className="h-6 w-6" />
                 </div>
@@ -108,31 +113,30 @@ export default function GroupDetailPage() {
                 </div>
             </div>
 
-            {/* Film Grid - UI DÜZELTİLDİ */}
-            {/* grid-cols ayarı ve min-w ile kartların ezilmesini engelledik */}
+            {/* --- Film Grid --- */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {poll.options.map((opt, index) => (
                     <div
                         key={opt.id}
                         className={`relative group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 bg-gray-900/60 ${
                             opt.isVotedByMe
-                                ? 'border-indigo-500 shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)]'
+                                ? 'border-indigo-500 shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] ring-1 ring-indigo-500/50'
                                 : 'border-white/10 hover:border-white/20 hover:-translate-y-1'
                         }`}
                     >
                         {/* Lider Rozeti */}
                         {index === 0 && opt.voteCount > 0 && (
                             <div className="absolute top-3 right-3 z-10">
-                                <div className="bg-amber-400/90 text-black text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 backdrop-blur-sm">
+                                <div className="bg-amber-400 text-black text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
                                     <Trophy className="h-3 w-3" /> LİDER
                                 </div>
                             </div>
                         )}
 
-                        {/* Poster Alanı - Tıklanabilir */}
+                        {/* Poster Alanı (Tıklanabilir -> Modal Açar) */}
                         <div
                             className="aspect-[2/3] w-full relative overflow-hidden cursor-pointer"
-                            onClick={() => setSelectedMovieId(opt.tmdbId)} // Modal açar
+                            onClick={() => setSelectedMovieId(opt.tmdbId)}
                         >
                             <img
                                 src={opt.posterPath ? `${IMG}/w500${opt.posterPath}` : '/no-poster.svg'}
@@ -140,14 +144,22 @@ export default function GroupDetailPage() {
                                 alt={opt.title}
                             />
                             {/* Hover Overlay */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                                <span className="text-white text-sm font-medium border border-white/30 px-4 py-2 rounded-full bg-black/30">Detaylar</span>
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                <span className="text-white text-sm font-medium border border-white/30 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md hover:bg-white hover:text-black transition-colors">
+                                    Detaylar
+                                </span>
                             </div>
                         </div>
 
-                        {/* Alt Kısım */}
+                        {/* Kart Alt Bilgi */}
                         <div className="p-4 flex-1 flex flex-col">
-                            <h3 className="font-bold text-white text-lg leading-tight line-clamp-1 mb-1" title={opt.title}>{opt.title}</h3>
+                            <h3
+                                className="font-bold text-white text-lg leading-tight line-clamp-1 mb-1"
+                                title={opt.title}
+                            >
+                                {opt.title}
+                            </h3>
+
                             <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
                                 <span>{opt.releaseYear || 'N/A'}</span>
                                 <span>•</span>
@@ -159,7 +171,7 @@ export default function GroupDetailPage() {
                             <div className="mt-auto pt-4 border-t border-white/5">
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-1.5 text-sm">
-                                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                        <Star className={`h-4 w-4 ${opt.voteCount > 0 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-600'}`} />
                                         <span className="font-bold text-white">{opt.voteCount}</span>
                                         <span className="text-gray-500">oy</span>
                                     </div>
@@ -188,7 +200,7 @@ export default function GroupDetailPage() {
                 ))}
             </div>
 
-            {/* Film Detay Modalı */}
+            {/* --- Film Detay Modalı --- */}
             {selectedMovieId && (
                 <MovieDetailModal
                     tmdbId={selectedMovieId}

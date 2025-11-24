@@ -30,7 +30,6 @@ export function addMember(groupId: number, email: string, role: 'ADMIN' | 'MEMBE
     return apiPost<string>('/groups/add-member', { groupId, email, role });
 }
 
-// YENİ: Kendi kendine katılma
 export function joinGroup(groupId: number) {
     return apiPost<string>(`/groups/${groupId}/join`);
 }

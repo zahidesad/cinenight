@@ -14,6 +14,7 @@ import java.util.List;
 public class GroupService {
 
     public record CreateGroupReq(@NotBlank String name, String description, String visibility) {}
+
     public record GroupDto(Long id, String name, String description, String visibility, String role) {
         public static GroupDto of(Group g, String role) {
             return new GroupDto(g.getId(), g.getName(), g.getDescription(),
@@ -86,7 +87,7 @@ public class GroupService {
         Group g = groups.findById(req.groupId()).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
         GroupMember me = members.findById(new GroupMemberId(g.getId(), byUserId))
                 .orElseThrow(() -> new IllegalArgumentException("Bu gruba üye değilsiniz."));
-        if (me.getRole() == GroupRole.MEMBER) throw new IllegalArgumentException("Üye eklemek için ADMIN veya OWNER olmalısınız.");
+        if (me.getRole() == GroupRole.MEMBER) throw new IllegalArgumentException("Yetkiniz yok.");
 
         User u = users.findByEmail(req.email()).orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
         GroupMemberId id = new GroupMemberId(g.getId(), u.getId());
