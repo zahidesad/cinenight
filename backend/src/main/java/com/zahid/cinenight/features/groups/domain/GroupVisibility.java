@@ -1,3 +1,3 @@
 package com.zahid.cinenight.features.groups.domain;
 
-public enum GroupVisibility { PRIVATE, LINK }
+public enum GroupVisibility { PRIVATE, LINK, PUBLIC}

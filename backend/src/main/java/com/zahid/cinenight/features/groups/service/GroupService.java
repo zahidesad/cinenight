@@ -90,7 +90,7 @@ public class GroupService {
 
         User u = users.findByEmail(req.email()).orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
         GroupMemberId id = new GroupMemberId(g.getId(), u.getId());
-        if (members.findById(id).isPresent()) return; // zaten üye
+        if (members.findById(id).isPresent()) return;
 
         GroupMember m = new GroupMember();
         m.setId(id);
@@ -108,7 +108,7 @@ public class GroupService {
     }
 
     public List<GroupDto> explore() {
-        return groups.findTop20ByVisibilityNotOrderByCreatedAtDesc(GroupVisibility.PRIVATE)
+        return groups.findTop20ByVisibilityOrderByCreatedAtDesc(GroupVisibility.PUBLIC)
                 .stream()
                 .map(g -> GroupDto.of(g, "VISITOR"))
                 .toList();
