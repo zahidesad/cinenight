@@ -1,24 +1,30 @@
 import { useState } from 'react';
-import { X, Loader2, MapPin, Clock } from 'lucide-react';
+import { X, Loader2, MapPin, Clock, Film } from 'lucide-react';
 import { createEvent } from '@/api/events';
 import { closePoll } from '@/api/polls';
 import { DayPicker } from 'react-day-picker';
 import { tr } from 'date-fns/locale';
 import 'react-day-picker/style.css';
 
+type MovieOption = { tmdbId: number; title: string };
+
 type Props = {
     groupId: number;
     pollId: number;
-    movie: { tmdbId: number; title: string };
+    movies: MovieOption[];
     onClose: () => void;
     onSuccess: () => void;
 };
 
-export default function CreateEventModal({ groupId, pollId, movie, onClose, onSuccess }: Props) {
+export default function CreateEventModal({ groupId, pollId, movies, onClose, onSuccess }: Props) {
+    const [selectedMovieId, setSelectedMovieId] = useState<number>(movies[0].tmdbId);
+
     const [selectedDate, setSelectedDate] = useState<Date>();
     const [time, setTime] = useState('21:00');
     const [location, setLocation] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const selectedMovie = movies.find(m => m.tmdbId === selectedMovieId) || movies[0];
 
     const handleSubmit = async () => {
         if (!selectedDate) return;
@@ -28,19 +34,16 @@ export default function CreateEventModal({ groupId, pollId, movie, onClose, onSu
         const startDate = new Date(selectedDate);
         startDate.setHours(hours, minutes);
 
-        // 1. Etkinliği Oluştur
         const res = await createEvent({
             groupId,
-            title: `${movie.title} - İzleme Gecesi`,
-            tmdbId: movie.tmdbId,
+            title: `${selectedMovie.title} - İzleme Gecesi`,
+            tmdbId: selectedMovie.tmdbId,
             startTime: startDate.toISOString(),
             locationText: location || 'Discord / Online'
         });
 
         if (res.ok) {
-            // 2. Başarılıysa Anketi Kapat (Böylece buton kaybolur)
             await closePoll(pollId);
-
             setLoading(false);
             onSuccess();
             onClose();
@@ -52,25 +55,45 @@ export default function CreateEventModal({ groupId, pollId, movie, onClose, onSu
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
-            <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
                     <h3 className="font-bold text-white">Etkinlik Planla</h3>
                     <button onClick={onClose}><X className="h-5 w-5 text-gray-400" /></button>
                 </div>
 
-                <div className="p-6 space-y-6">
-                    <div className="text-center">
-                        <div className="text-sm text-gray-400">Kazanan Film</div>
-                        <div className="text-xl font-bold text-emerald-400">{movie.title}</div>
-                    </div>
+                <div className="p-6 space-y-6 overflow-y-auto">
+                    {movies.length > 1 ? (
+                        <div className="bg-gray-800/50 p-3 rounded-xl border border-amber-500/30">
+                            <div className="text-xs font-bold text-amber-400 mb-2 uppercase tracking-wide text-center">Beraberlik! Hangi filmi seçiyorsun?</div>
+                            <div className="space-y-2">
+                                {movies.map(m => (
+                                    <label key={m.tmdbId} className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${selectedMovieId === m.tmdbId ? 'bg-indigo-600/20 border-indigo-500' : 'border-white/5 hover:bg-white/5'}`}>
+                                        <input
+                                            type="radio"
+                                            name="winner_select"
+                                            checked={selectedMovieId === m.tmdbId}
+                                            onChange={() => setSelectedMovieId(m.tmdbId)}
+                                            className="accent-indigo-500 w-4 h-4"
+                                        />
+                                        <span className="text-sm font-medium text-white">{m.title}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center">
+                            <div className="text-sm text-gray-400 mb-1 flex items-center justify-center gap-1"><Film className="h-3 w-3"/> Kazanan Film</div>
+                            <div className="text-lg font-bold text-emerald-400">{selectedMovie.title}</div>
+                        </div>
+                    )}
 
+                    {/* TAKVİM */}
                     <div className="flex justify-center rounded-xl bg-gray-800/50 border border-white/5 p-2">
                         <DayPicker
                             mode="single"
                             selected={selectedDate}
                             onSelect={setSelectedDate}
                             locale={tr}
-                            // EKLENDİ: Bugünden önceki tarihleri engelle
                             disabled={{ before: new Date() }}
                             styles={{ caption: { color: 'white' }, head_cell: { color: '#9ca3af' }, day: { color: 'white' }, nav_button: { color: 'white' } }}
                         />

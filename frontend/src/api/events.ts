@@ -10,6 +10,7 @@ export type EventDto = {
     locationText?: string;
     locationUrl?: string;
     status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+    myRsvp?: 'YES' | 'NO' | 'MAYBE' | null;
 };
 
 export type RsvpStatus = 'YES' | 'NO' | 'MAYBE';

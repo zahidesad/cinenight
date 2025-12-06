@@ -41,9 +41,10 @@ public class EventService {
             Integer tmdbId, String movieTitle,
             LocalDateTime startTime, LocalDateTime endTime, String timezone,
             String locationText, String locationUrl,
-            String status, String icalUid
+            String status, String icalUid,
+            String myRsvp
     ) {
-        public static EventDto from(WatchEvent e) {
+        public static EventDto from(WatchEvent e, String myRsvp) {
             Integer tmdbId = Optional.ofNullable(e.getMovie()).map(Movie::getTmdbId).orElse(null);
             String movieTitle = Optional.ofNullable(e.getMovie()).map(Movie::getTitle).orElse(null);
             return new EventDto(
@@ -51,7 +52,8 @@ public class EventService {
                     tmdbId, movieTitle,
                     e.getStartTime(), e.getEndTime(), e.getTimezone(),
                     e.getLocationText(), e.getLocationUrl(),
-                    e.getStatus().name(), e.getIcalUid()
+                    e.getStatus().name(), e.getIcalUid(),
+                    myRsvp
             );
         }
     }
@@ -116,13 +118,18 @@ public class EventService {
         e.setIcalUid(generateUidIfAbsent(e.getIcalUid()));
         events.save(e);
 
-        return EventDto.from(e);
+        return EventDto.from(e, "YES");
     }
 
     public EventDto get(Long eventId, Long currentUserId) {
         WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException("Etkinlik bulunamadı."));
         ensureMember(e.getGroup().getId(), currentUserId);
-        return EventDto.from(e);
+
+        var rsvp = rsvps.findAll().stream()
+                .filter(r -> r.getEvent().getId().equals(eventId) && r.getUser().getId().equals(currentUserId))
+                .findFirst();
+
+        return EventDto.from(e, rsvp.map(r -> r.getStatus().name()).orElse(null));
     }
 
     /** RSVP upsert */
@@ -210,7 +217,15 @@ public class EventService {
         ensureMember(groupId, currentUserId);
         var list = events.findAllByGroupIdOrderByStartTimeDesc(groupId);
         return list.stream()
-                .map(EventDto::from)
+                .map(e -> {
+                    // Bu kullanıcı bu etkinlik için RSVP yapmış mı?
+                    var rsvp = rsvps.findAll().stream()
+                            .filter(r -> r.getEvent().getId().equals(e.getId()) && r.getUser().getId().equals(currentUserId))
+                            .findFirst();
+
+                    String status = rsvp.map(r -> r.getStatus().name()).orElse(null);
+                    return EventDto.from(e, status);
+                })
                 .toList();
     }
 }

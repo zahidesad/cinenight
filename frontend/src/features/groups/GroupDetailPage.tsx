@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
 import { fetchGroupEvents, rsvpEvent, type EventDto } from '@/api/events';
+import { fetchMyGroups } from '@/api/groups';
 import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock } from 'lucide-react';
 import MovieDetailModal from '@/components/MovieDetailModal';
 import { format } from 'date-fns';
@@ -13,30 +14,40 @@ const IMG = "https://image.tmdb.org/t/p";
 export default function GroupDetailPage() {
     const { groupId } = useParams();
 
-    // State
+    // --- State ---
     const [poll, setPoll] = useState<PollDetailDto | null>(null);
     const [events, setEvents] = useState<EventDto[]>([]);
+    const [role, setRole] = useState<string>('MEMBER'); // Kullanıcı rolü (OWNER/MEMBER)
     const [loading, setLoading] = useState(true);
 
-    // Actions
+    // --- Actions ---
     const [votingId, setVotingId] = useState<number | null>(null);
     const [rsvpLoading, setRsvpLoading] = useState<number | null>(null);
     const [copied, setCopied] = useState(false);
 
-    // Modals
+    // --- Modals ---
     const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
     const [showEventModal, setShowEventModal] = useState(false);
 
+    // Verileri Yükle
     const loadData = async () => {
         if (!groupId) return;
         try {
-            const [pollRes, eventsRes] = await Promise.all([
+            // Paralel veri çekme: Anket, Etkinlikler ve Gruplar (Rolü bulmak için)
+            const [pollRes, eventsRes, groupsRes] = await Promise.all([
                 fetchActivePoll(Number(groupId)),
-                fetchGroupEvents(Number(groupId))
+                fetchGroupEvents(Number(groupId)),
+                fetchMyGroups()
             ]);
 
             if (pollRes.ok && pollRes.data) setPoll(pollRes.data);
             if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
+
+            // Kullanıcının bu gruptaki rolünü bul
+            if (groupsRes.ok && groupsRes.data) {
+                const currentGroup = groupsRes.data.find(g => g.id === Number(groupId));
+                if (currentGroup) setRole(currentGroup.role);
+            }
 
         } catch (err) {
             console.error(err);
@@ -49,6 +60,7 @@ export default function GroupDetailPage() {
         loadData();
     }, [groupId]);
 
+    // Oy Kullanma
     const handleVote = async (optionId: number) => {
         if (!poll) return;
         setVotingId(optionId);
@@ -56,19 +68,19 @@ export default function GroupDetailPage() {
 
         if (res.ok) {
             const pollRes = await fetchActivePoll(Number(groupId));
-            if (pollRes.ok && pollRes.data) {
-                setPoll(pollRes.data);
-            }
+            if (pollRes.ok && pollRes.data) setPoll(pollRes.data);
         }
         setVotingId(null);
     };
 
+    // RSVP (Katılım Durumu)
     const handleRsvp = async (eventId: number, status: 'YES' | 'NO') => {
         setRsvpLoading(eventId);
         await rsvpEvent(eventId, status);
+        // Listeyi yenile ki buton rengi değişsin
+        const eventsRes = await fetchGroupEvents(Number(groupId));
+        if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
         setRsvpLoading(null);
-        // Basit bir bildirim (gerçek projede toast kullanılabilir)
-        // alert yerine UI'da butonun durumu değişiyor zaten, şimdilik sessiz kalabilir veya toast eklenebilir.
     };
 
     const handleCopyInvite = () => {
@@ -86,6 +98,13 @@ export default function GroupDetailPage() {
         );
     }
 
+    // Kazananları Hesapla (Beraberlik durumunu yönetmek için liste dönüyoruz)
+    const winners = poll && poll.options.length > 0
+        ? poll.options.filter(o => o.voteCount === poll.options[0].voteCount && o.voteCount > 0)
+        : [];
+
+    const isTie = winners.length > 1;
+
     return (
         <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20 px-4 md:px-8">
 
@@ -97,10 +116,10 @@ export default function GroupDetailPage() {
                     </Link>
                     <div>
                         <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Grup Detayı</h1>
-                        <p className="text-gray-400 text-sm mt-1 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Aktif Oturum
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            {role === 'OWNER' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold border border-amber-500/30">YÖNETİCİ</span>}
+                            <span className="text-gray-400 text-sm">Etkinlikler ve Oylamalar</span>
+                        </div>
                     </div>
                 </div>
 
@@ -113,7 +132,7 @@ export default function GroupDetailPage() {
                 </button>
             </div>
 
-            {/* --- BÖLÜM 1: ETKİNLİKLER (Grid Düzeni İyileştirildi) --- */}
+            {/* --- BÖLÜM 1: ETKİNLİKLER --- */}
             {events.length > 0 && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 text-emerald-400 font-semibold uppercase tracking-wider text-sm">
@@ -124,7 +143,7 @@ export default function GroupDetailPage() {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                         {events.map(evt => (
                             <div key={evt.id} className="relative group overflow-hidden rounded-3xl border border-white/10 bg-gray-900 shadow-2xl hover:shadow-emerald-900/20 hover:border-emerald-500/30 transition-all duration-300">
-                                {/* Dekoratif Arkaplan Gradient */}
+                                {/* Dekoratif Arkaplan */}
                                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-transparent opacity-50 pointer-events-none" />
 
                                 <div className="p-6 flex flex-col h-full relative z-10">
@@ -149,19 +168,15 @@ export default function GroupDetailPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        {evt.status === 'SCHEDULED' && (
-                                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-                                                YAKLAŞIYOR
-                                            </span>
-                                        )}
+                                        {/* Katılım Durumu Rozeti */}
+                                        {evt.myRsvp === 'YES' && <span className="px-2 py-1 rounded bg-emerald-500 text-white text-[10px] font-bold shadow-lg">KATILIYORSUN</span>}
+                                        {evt.myRsvp === 'NO' && <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold">KATILMIYORSUN</span>}
                                     </div>
 
-                                    {/* Başlık */}
                                     <h3 className="text-xl font-bold text-white mb-2 leading-snug break-words">
                                         {evt.title}
                                     </h3>
 
-                                    {/* Detaylar */}
                                     <div className="space-y-2 mb-6">
                                         {evt.movieTitle && (
                                             <div className="flex items-center gap-2 text-sm text-indigo-300 bg-indigo-900/20 w-fit px-2 py-1 rounded-md border border-indigo-500/20">
@@ -177,19 +192,19 @@ export default function GroupDetailPage() {
                                         )}
                                     </div>
 
-                                    {/* Butonlar */}
+                                    {/* Aksiyon Butonları */}
                                     <div className="flex gap-3 mt-auto">
                                         <button
                                             onClick={() => handleRsvp(evt.id, 'YES')}
                                             disabled={rsvpLoading === evt.id}
-                                            className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg shadow-emerald-900/50 group-hover:scale-[1.02] active:scale-95"
+                                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 ${evt.myRsvp === 'YES' ? 'bg-emerald-600 text-white cursor-default' : 'bg-gray-800 hover:bg-emerald-600 hover:text-white text-gray-300 border border-white/5'}`}
                                         >
                                             <Check className="h-4 w-4" /> Geliyorum
                                         </button>
                                         <button
                                             onClick={() => handleRsvp(evt.id, 'NO')}
                                             disabled={rsvpLoading === evt.id}
-                                            className="px-4 rounded-xl bg-gray-800 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-sm font-medium transition border border-white/5 hover:border-red-500/30 active:scale-95"
+                                            className={`px-4 rounded-xl text-sm font-medium transition ${evt.myRsvp === 'NO' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-gray-800 hover:bg-red-500/20 hover:text-red-400 text-gray-400 border border-white/5'}`}
                                             title="Gelemiyorum"
                                         >
                                             <X className="h-5 w-5" />
@@ -202,7 +217,8 @@ export default function GroupDetailPage() {
                 </section>
             )}
 
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            {/* Ayırıcı Çizgi */}
+            {events.length > 0 && poll && <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />}
 
             {/* --- BÖLÜM 2: ANKET --- */}
             {poll ? (
@@ -217,140 +233,142 @@ export default function GroupDetailPage() {
                         </div>
                     </div>
 
-                    {/* --- Lider ve Etkinlik Oluşturma Banner --- */}
-                    {(() => {
-                        const winner = poll.options.length > 0 ? poll.options[0] : null;
-                        return (
-                            poll.isOpen && winner && winner.voteCount > 0 && (
-                                <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border border-indigo-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                    {/* LİDER PANOSU & PLANLAMA BUTONU (Sadece Owner Görür) */}
+                    {poll.isOpen && winners.length > 0 && role === 'OWNER' && (
+                        <div className={`relative overflow-hidden p-6 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl ${isTie ? 'bg-amber-900/20 border-amber-500/30' : 'bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border-indigo-500/30'}`}>
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-                                    <div className="flex items-center gap-4 relative z-10">
-                                        <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                                            <Trophy className="h-8 w-8" />
-                                        </div>
-                                        <div>
-                                            <div className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Şu Anki Lider</div>
-                                            <div className="text-white font-bold text-2xl md:text-3xl leading-none">
-                                                {winner.title}
-                                            </div>
-                                            <div className="text-gray-400 text-sm mt-1">{winner.voteCount} oy ile önde</div>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={() => setShowEventModal(true)}
-                                        className="relative z-10 px-6 py-3 rounded-xl bg-white text-indigo-900 hover:bg-indigo-50 font-bold text-sm transition shadow-xl hover:shadow-white/10 whitespace-nowrap flex items-center gap-2"
-                                    >
-                                        <Calendar className="h-4 w-4" />
-                                        Oylamayı Bitir & Planla
-                                    </button>
+                            <div className="flex items-center gap-4 relative z-10">
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-lg ${isTie ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'}`}>
+                                    <Trophy className="h-8 w-8" />
                                 </div>
-                            )
-                        );
-                    })()}
-
-                    {/* Film Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-                        {poll.options.map((opt, index) => (
-                            <div
-                                key={opt.id}
-                                className={`relative group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 bg-gray-900 ${
-                                    opt.isVotedByMe
-                                        ? 'border-indigo-500 shadow-[0_0_25px_-5px_rgba(99,102,241,0.3)] ring-1 ring-indigo-500/50 scale-[1.02] z-10'
-                                        : 'border-white/10 hover:border-white/30 hover:-translate-y-1 hover:shadow-xl'
-                                }`}
-                            >
-                                {/* Poster */}
-                                <div
-                                    className="aspect-[2/3] w-full relative overflow-hidden cursor-pointer bg-gray-800"
-                                    onClick={() => setSelectedMovieId(opt.tmdbId)}
-                                >
-                                    {opt.posterPath ? (
-                                        <img
-                                            src={`${IMG}/w500${opt.posterPath}`}
-                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                            alt={opt.title}
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center text-gray-600">
-                                            <Film className="h-12 w-12" />
-                                        </div>
-                                    )}
-
-                                    {/* Overlay Gradient */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80" />
-
-                                    {/* Lider Rozeti */}
-                                    {index === 0 && opt.voteCount > 0 && (
-                                        <div className="absolute top-2 right-2 z-10">
-                                            <div className="bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1 backdrop-blur-md">
-                                                <Trophy className="h-3 w-3" /> #1
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Hover Action */}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                                        <span className="text-white text-xs font-bold border border-white/40 px-4 py-2 rounded-full bg-black/50 hover:bg-white hover:text-black transition-colors">
-                                            Detaylar
-                                        </span>
+                                <div>
+                                    <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${isTie ? 'text-amber-400' : 'text-indigo-200'}`}>
+                                        {isTie ? 'KRİTİK DURUM: BERABERLİK!' : 'ŞU ANKİ LİDER'}
                                     </div>
-                                </div>
-
-                                {/* Bilgi ve Buton */}
-                                <div className="p-4 flex-1 flex flex-col relative">
-                                    <div className="absolute -top-10 left-4 right-4 text-shadow-sm">
-                                        <div className="flex items-center gap-1.5 text-white/90 font-bold text-lg">
-                                            <span className="text-yellow-400 drop-shadow-md">★</span>
-                                            {opt.voteCount}
-                                        </div>
+                                    <div className="text-white font-bold text-2xl leading-none">
+                                        {isTie ? `${winners.length} Film Zirvede` : winners[0].title}
                                     </div>
-
-                                    <h3 className="font-bold text-gray-100 text-sm leading-tight line-clamp-2 mb-2 min-h-[2.5rem]" title={opt.title}>
-                                        {opt.title}
-                                    </h3>
-
-                                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                                        <span>{opt.releaseYear || 'N/A'}</span>
-                                        <span className="flex items-center gap-1 truncate max-w-[80px]">
-                                            <span className="w-1 h-1 rounded-full bg-gray-500" />
-                                            {opt.addedBy}
-                                        </span>
-                                    </div>
-
-                                    <button
-                                        onClick={() => handleVote(opt.id)}
-                                        disabled={votingId !== null || !poll.isOpen}
-                                        className={`mt-auto w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 ${
-                                            opt.isVotedByMe
-                                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 cursor-default'
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/20'
-                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                    >
-                                        {votingId === opt.id ? (
-                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                        ) : opt.isVotedByMe ? (
-                                            <><Check className="h-3.5 w-3.5" /> Oy Verildi</>
-                                        ) : (
-                                            'Oy Ver'
-                                        )}
-                                    </button>
+                                    <div className="text-gray-400 text-sm mt-1">{winners[0].voteCount} oy ile</div>
                                 </div>
                             </div>
-                        ))}
+
+                            <button
+                                onClick={() => setShowEventModal(true)}
+                                className={`relative z-10 px-6 py-3 rounded-xl font-bold text-sm transition shadow-xl hover:shadow-white/10 whitespace-nowrap flex items-center gap-2 ${isTie ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-white hover:bg-gray-100 text-indigo-900'}`}
+                            >
+                                <Calendar className="h-4 w-4" />
+                                {isTie ? 'Seçim Yap & Planla' : 'Oylamayı Bitir & Planla'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* FİLM LİSTESİ (GRID) */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                        {poll.options.map((opt) => {
+                            const isWinner = winners.some(w => w.id === opt.id);
+
+                            return (
+                                <div
+                                    key={opt.id}
+                                    className={`relative group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 bg-gray-900 ${
+                                        opt.isVotedByMe
+                                            ? 'border-indigo-500 shadow-[0_0_25px_-5px_rgba(99,102,241,0.3)] ring-1 ring-indigo-500/50 scale-[1.02] z-10'
+                                            : 'border-white/10 hover:border-white/30 hover:-translate-y-1 hover:shadow-xl'
+                                    }`}
+                                >
+                                    {/* Poster */}
+                                    <div
+                                        className="aspect-[2/3] w-full relative overflow-hidden cursor-pointer bg-gray-800"
+                                        onClick={() => setSelectedMovieId(opt.tmdbId)}
+                                    >
+                                        {opt.posterPath ? (
+                                            <img
+                                                src={`${IMG}/w500${opt.posterPath}`}
+                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                alt={opt.title}
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="absolute inset-0 flex items-center justify-center text-gray-600">
+                                                <Film className="h-12 w-12" />
+                                            </div>
+                                        )}
+
+                                        {/* Gölge Efekti */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80" />
+
+                                        {/* Lider Badge */}
+                                        {isWinner && (
+                                            <div className="absolute top-2 right-2 z-10">
+                                                <div className={`text-white text-[10px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1 backdrop-blur-md ${isTie ? 'bg-amber-500' : 'bg-indigo-500'}`}>
+                                                    <Trophy className="h-3 w-3" /> {isTie ? 'LİDER' : '#1'}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Detaylar Hover */}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                            <span className="text-white text-xs font-bold border border-white/40 px-4 py-2 rounded-full bg-black/50 hover:bg-white hover:text-black transition-colors">
+                                                Detaylar
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Kart Alt Bilgi */}
+                                    <div className="p-4 flex-1 flex flex-col relative">
+                                        <div className="absolute -top-10 left-4 right-4 text-shadow-sm pointer-events-none">
+                                            <div className="flex items-center gap-1.5 text-white/90 font-bold text-lg">
+                                                <span className="text-yellow-400 drop-shadow-md">★</span>
+                                                {opt.voteCount}
+                                            </div>
+                                        </div>
+
+                                        <h3 className="font-bold text-gray-100 text-sm leading-tight line-clamp-2 mb-2 min-h-[2.5rem]" title={opt.title}>
+                                            {opt.title}
+                                        </h3>
+
+                                        <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                                            <span>{opt.releaseYear || 'N/A'}</span>
+                                            <span className="flex items-center gap-1 truncate max-w-[80px]" title={opt.addedBy}>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                                                {opt.addedBy}
+                                            </span>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleVote(opt.id)}
+                                            disabled={votingId !== null || !poll.isOpen}
+                                            className={`mt-auto w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 ${
+                                                opt.isVotedByMe
+                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 cursor-default'
+                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/20'
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        >
+                                            {votingId === opt.id ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            ) : opt.isVotedByMe ? (
+                                                <><Check className="h-3.5 w-3.5" /> Oy Verildi</>
+                                            ) : (
+                                                'Oy Ver'
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </section>
             ) : (
+                // Boş Durum (Ne Etkinlik Ne Anket Var)
                 events.length === 0 && (
-                    <div className="text-center py-24 bg-gray-900/30 rounded-3xl border border-dashed border-gray-700">
-                        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
-                            <Film className="h-8 w-8" />
+                    <div className="flex flex-col items-center justify-center py-24 bg-gray-900/30 rounded-3xl border border-dashed border-gray-700 text-center">
+                        <div className="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 text-gray-600">
+                            <Film className="h-10 w-10" />
                         </div>
                         <h3 className="text-2xl font-bold text-white mb-2">Henüz Aktif Bir Şey Yok</h3>
-                        <p className="text-gray-400 mb-8 max-w-md mx-auto">Grubunda şimdilik sessizlik hakim. Arkadaşlarını topla ve bir film gecesi planla.</p>
-                        <Link to="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/20">
+                        <p className="text-gray-400 mb-8 max-w-md">Grubunda şimdilik sessizlik hakim. Arkadaşlarını topla ve bir film gecesi planla.</p>
+                        <Link to="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/20 hover:-translate-y-1">
                             <Film className="h-5 w-5" />
                             Film Öner ve Başlat
                         </Link>
@@ -366,11 +384,11 @@ export default function GroupDetailPage() {
                 />
             )}
 
-            {showEventModal && poll && poll.options.length > 0 && (
+            {showEventModal && poll && (
                 <CreateEventModal
                     groupId={Number(groupId)}
                     pollId={poll.id}
-                    movie={poll.options[0]}
+                    movies={winners}
                     onClose={() => setShowEventModal(false)}
                     onSuccess={() => {
                         loadData();
