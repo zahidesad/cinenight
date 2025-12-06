@@ -113,8 +113,9 @@ public class AuthService {
 
 
     public UserDto me(String email) {
-        User u = users.findByEmail(email).orElseThrow();
-        return toDto(u);
+        return users.findByEmail(email)
+                .map(AuthService::toDto)
+                .orElse(null);
     }
 
     private static UserDto toDto(User u) {

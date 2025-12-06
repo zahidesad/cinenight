@@ -1,4 +1,4 @@
-import { apiGet, apiPost, unwrap } from './client';
+import { apiGet, apiPost } from './client';
 
 export type PollOptionDto = {
     id: number;
@@ -24,11 +24,14 @@ export function suggestMovie(groupId: number, tmdbId: number, title: string) {
     return apiPost<string>('/polls/suggest', { groupId, tmdbId, title });
 }
 
-export async function fetchActivePoll(groupId: number) {
-    const res = await apiGet<PollDetailDto>(`/polls/group/${groupId}/active`);
-    return unwrap(res);
+export function fetchActivePoll(groupId: number) {
+    return apiGet<PollDetailDto>(`/polls/group/${groupId}/active`);
 }
 
 export function castVote(pollId: number, optionId: number) {
     return apiPost<string>(`/polls/${pollId}/vote`, { optionId });
+}
+
+export function closePoll(pollId: number) {
+    return apiPost<string>(`/polls/${pollId}/close`);
 }

@@ -51,6 +51,7 @@ export default function AppRoutes() {
                 <Route path="/try" element={<TryDemoPage />} />
                 <Route path="/dashboard" element={<GroupsPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/groups/:groupId" element={<GroupDetailPage />} />
             </Route>
 
             <Route element={<AuthLayout />}>
@@ -58,7 +59,6 @@ export default function AppRoutes() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/groups/:groupId" element={<GroupDetailPage />} />
                 <Route path="/join/:groupId" element={<JoinGroupPage />} />
             </Route>
         </Routes>

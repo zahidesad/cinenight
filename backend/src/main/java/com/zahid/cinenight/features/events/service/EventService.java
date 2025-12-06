@@ -33,7 +33,7 @@ public class EventService {
             String timezone,
             String locationText,
             String locationUrl,
-            String language // TMDB dili (varsayılan: "tr-TR")
+            String language
     ) {}
 
     public record EventDto(
@@ -204,5 +204,13 @@ public class EventService {
                 .append("END:VCALENDAR\r\n");
 
         return sb.toString();
+    }
+
+    public java.util.List<EventDto> listByGroup(Long groupId, Long currentUserId) {
+        ensureMember(groupId, currentUserId);
+        var list = events.findAllByGroupIdOrderByStartTimeDesc(groupId);
+        return list.stream()
+                .map(EventDto::from)
+                .toList();
     }
 }

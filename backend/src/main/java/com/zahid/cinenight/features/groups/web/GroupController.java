@@ -1,6 +1,7 @@
 package com.zahid.cinenight.features.groups.web;
 
 import com.zahid.cinenight.common.api.ApiResponse;
+import com.zahid.cinenight.features.events.service.EventService;
 import com.zahid.cinenight.features.groups.service.GroupService;
 import com.zahid.cinenight.features.groups.service.GroupService.CreateGroupReq;
 import com.zahid.cinenight.features.groups.service.GroupService.AddMemberReq;
@@ -19,10 +20,12 @@ import java.util.List;
 public class GroupController {
 
     private final GroupService service;
+    private final EventService eventService;
     private final UserRepository users;
 
-    public GroupController(GroupService service, UserRepository users) {
+    public GroupController(GroupService service, EventService eventService, UserRepository users) {
         this.service = service;
+        this.eventService = eventService;
         this.users = users;
     }
 
@@ -59,5 +62,11 @@ public class GroupController {
                                     @PathVariable Long groupId) {
         service.join(groupId, uid(p));
         return ApiResponse.ok("joined");
+    }
+
+    @GetMapping("/{groupId}/events")
+    public ApiResponse<List<EventService.EventDto>> getGroupEvents(@AuthenticationPrincipal UserDetails p,
+                                                                   @PathVariable Long groupId) {
+        return ApiResponse.ok(eventService.listByGroup(groupId, uid(p)));
     }
 }

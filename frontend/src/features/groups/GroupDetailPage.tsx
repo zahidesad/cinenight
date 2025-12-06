@@ -1,48 +1,74 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
-import { ChevronLeft, Loader2, Users, Trophy, Share2, Check, FileText, Star } from 'lucide-react';
+import { fetchGroupEvents, rsvpEvent, type EventDto } from '@/api/events';
+import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock } from 'lucide-react';
 import MovieDetailModal from '@/components/MovieDetailModal';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
+import CreateEventModal from './components/CreateEventModal';
 
 const IMG = "https://image.tmdb.org/t/p";
 
 export default function GroupDetailPage() {
     const { groupId } = useParams();
-    const [poll, setPoll] = useState<PollDetailDto | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [votingId, setVotingId] = useState<number | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
-    const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null); // Modal için state
 
-    const loadPoll = async () => {
+    // State
+    const [poll, setPoll] = useState<PollDetailDto | null>(null);
+    const [events, setEvents] = useState<EventDto[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Actions
+    const [votingId, setVotingId] = useState<number | null>(null);
+    const [rsvpLoading, setRsvpLoading] = useState<number | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    // Modals
+    const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
+    const [showEventModal, setShowEventModal] = useState(false);
+
+    const loadData = async () => {
+        if (!groupId) return;
         try {
-            const data = await fetchActivePoll(Number(groupId));
-            setPoll(data);
-            setError(null);
-        } catch (err: unknown) {
+            const [pollRes, eventsRes] = await Promise.all([
+                fetchActivePoll(Number(groupId)),
+                fetchGroupEvents(Number(groupId))
+            ]);
+
+            if (pollRes.ok && pollRes.data) setPoll(pollRes.data);
+            if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
+
+        } catch (err) {
             console.error(err);
-            setError("Bu grupta henüz aktif bir anket yok veya bir hata oluştu.");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        loadPoll();
+        loadData();
     }, [groupId]);
 
     const handleVote = async (optionId: number) => {
         if (!poll) return;
         setVotingId(optionId);
-
-        // Backend "varsa güncelle, yoksa ekle" mantığında çalışıyor.
         const res = await castVote(poll.id, optionId);
 
         if (res.ok) {
-            await loadPoll(); // Güncel oy sayılarını ve 'isVotedByMe' durumunu çek
+            const pollRes = await fetchActivePoll(Number(groupId));
+            if (pollRes.ok && pollRes.data) {
+                setPoll(pollRes.data);
+            }
         }
         setVotingId(null);
+    };
+
+    const handleRsvp = async (eventId: number, status: 'YES' | 'NO') => {
+        setRsvpLoading(eventId);
+        await rsvpEvent(eventId, status);
+        setRsvpLoading(null);
+        // Basit bir bildirim (gerçek projede toast kullanılabilir)
+        // alert yerine UI'da butonun durumu değişiyor zaten, şimdilik sessiz kalabilir veya toast eklenebilir.
     };
 
     const handleCopyInvite = () => {
@@ -60,151 +86,295 @@ export default function GroupDetailPage() {
         );
     }
 
-    if (error || !poll) {
-        return (
-            <div className="max-w-4xl mx-auto mt-10 text-center px-4">
-                <div className="rounded-2xl border border-white/10 bg-gray-900/50 p-10">
-                    <h2 className="text-xl font-semibold text-white mb-2">Henüz Anket Yok</h2>
-                    <p className="text-gray-400 mb-6">{error}</p>
-                    <Link to="/" className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white hover:bg-indigo-700 font-medium transition">
-                        Film Bul & Öner
-                    </Link>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 px-4">
+        <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20 px-4 md:px-8">
+
             {/* --- Header --- */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6 pt-4">
                 <div className="flex items-center gap-4">
-                    <Link to="/dashboard" className="p-2 rounded-full hover:bg-white/5 text-gray-400 transition">
-                        <ChevronLeft className="h-6 w-6" />
+                    <Link to="/dashboard" className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-gray-300 hover:text-white transition border border-white/5">
+                        <ChevronLeft className="h-5 w-5" />
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold text-white">{poll.title}</h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                            <span className={`w-2 h-2 rounded-full ${poll.isOpen ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} />
-                            {poll.isOpen ? 'Oylama Aktif' : 'Kapandı'}
-                        </div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Grup Detayı</h1>
+                        <p className="text-gray-400 text-sm mt-1 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Aktif Oturum
+                        </p>
                     </div>
                 </div>
 
                 <button
                     onClick={handleCopyInvite}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600/20 transition text-sm font-medium border border-indigo-500/20"
+                    className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-sm font-semibold border border-indigo-500/20 hover:border-indigo-500 shadow-lg shadow-indigo-500/5"
                 >
-                    {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                    {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />}
                     {copied ? "Link Kopyalandı" : "Arkadaşlarını Davet Et"}
                 </button>
             </div>
 
-            {/* --- Etkinlik Detay Kartı --- */}
-            <div className="bg-gray-900/40 border border-white/5 p-6 rounded-2xl flex flex-col md:flex-row gap-6 shadow-inner">
-                <div className="p-3 h-fit rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-300">
-                    <FileText className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ETKİNLİK DETAYLARI</h4>
-                    <div className="text-gray-200 text-sm whitespace-pre-wrap leading-relaxed font-medium">
-                        {poll.description || "Henüz detay girilmedi."}
+            {/* --- BÖLÜM 1: ETKİNLİKLER (Grid Düzeni İyileştirildi) --- */}
+            {events.length > 0 && (
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-emerald-400 font-semibold uppercase tracking-wider text-sm">
+                        <Calendar className="h-4 w-4" />
+                        Planlanan Etkinlikler
                     </div>
-                </div>
-            </div>
 
-            {/* --- Film Grid --- */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {poll.options.map((opt, index) => (
-                    <div
-                        key={opt.id}
-                        className={`relative group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 bg-gray-900/60 ${
-                            opt.isVotedByMe
-                                ? 'border-indigo-500 shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] ring-1 ring-indigo-500/50'
-                                : 'border-white/10 hover:border-white/20 hover:-translate-y-1'
-                        }`}
-                    >
-                        {/* Lider Rozeti */}
-                        {index === 0 && opt.voteCount > 0 && (
-                            <div className="absolute top-3 right-3 z-10">
-                                <div className="bg-amber-400 text-black text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
-                                    <Trophy className="h-3 w-3" /> LİDER
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                        {events.map(evt => (
+                            <div key={evt.id} className="relative group overflow-hidden rounded-3xl border border-white/10 bg-gray-900 shadow-2xl hover:shadow-emerald-900/20 hover:border-emerald-500/30 transition-all duration-300">
+                                {/* Dekoratif Arkaplan Gradient */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-transparent opacity-50 pointer-events-none" />
+
+                                <div className="p-6 flex flex-col h-full relative z-10">
+                                    {/* Tarih ve Durum */}
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex flex-col items-center justify-center bg-gray-800/80 border border-white/10 rounded-xl p-2 min-w-[3.5rem]">
+                                                <span className="text-xs font-bold text-gray-400 uppercase">
+                                                    {format(new Date(evt.startTime), 'MMM', { locale: tr })}
+                                                </span>
+                                                <span className="text-xl font-bold text-white">
+                                                    {format(new Date(evt.startTime), 'dd')}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <div className="text-white font-semibold flex items-center gap-1.5">
+                                                    <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                                                    {format(new Date(evt.startTime), 'HH:mm')}
+                                                </div>
+                                                <div className="text-xs text-gray-400 capitalize">
+                                                    {format(new Date(evt.startTime), 'EEEE', { locale: tr })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {evt.status === 'SCHEDULED' && (
+                                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                                                YAKLAŞIYOR
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Başlık */}
+                                    <h3 className="text-xl font-bold text-white mb-2 leading-snug break-words">
+                                        {evt.title}
+                                    </h3>
+
+                                    {/* Detaylar */}
+                                    <div className="space-y-2 mb-6">
+                                        {evt.movieTitle && (
+                                            <div className="flex items-center gap-2 text-sm text-indigo-300 bg-indigo-900/20 w-fit px-2 py-1 rounded-md border border-indigo-500/20">
+                                                <Film className="h-3.5 w-3.5" />
+                                                <span className="truncate max-w-[200px]">{evt.movieTitle}</span>
+                                            </div>
+                                        )}
+                                        {evt.locationText && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                                                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                                <span className="truncate">{evt.locationText}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Butonlar */}
+                                    <div className="flex gap-3 mt-auto">
+                                        <button
+                                            onClick={() => handleRsvp(evt.id, 'YES')}
+                                            disabled={rsvpLoading === evt.id}
+                                            className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg shadow-emerald-900/50 group-hover:scale-[1.02] active:scale-95"
+                                        >
+                                            <Check className="h-4 w-4" /> Geliyorum
+                                        </button>
+                                        <button
+                                            onClick={() => handleRsvp(evt.id, 'NO')}
+                                            disabled={rsvpLoading === evt.id}
+                                            className="px-4 rounded-xl bg-gray-800 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-sm font-medium transition border border-white/5 hover:border-red-500/30 active:scale-95"
+                                            title="Gelemiyorum"
+                                        >
+                                            <X className="h-5 w-5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                        ))}
+                    </div>
+                </section>
+            )}
 
-                        {/* Poster Alanı (Tıklanabilir -> Modal Açar) */}
-                        <div
-                            className="aspect-[2/3] w-full relative overflow-hidden cursor-pointer"
-                            onClick={() => setSelectedMovieId(opt.tmdbId)}
-                        >
-                            <img
-                                src={opt.posterPath ? `${IMG}/w500${opt.posterPath}` : '/no-poster.svg'}
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                alt={opt.title}
-                            />
-                            {/* Hover Overlay */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                                <span className="text-white text-sm font-medium border border-white/30 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md hover:bg-white hover:text-black transition-colors">
-                                    Detaylar
-                                </span>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+            {/* --- BÖLÜM 2: ANKET --- */}
+            {poll ? (
+                <section className="space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 text-indigo-400 font-semibold uppercase tracking-wider text-sm mb-1">
+                                <span className="text-lg">🗳️</span>
+                                {poll.isOpen ? 'Oylama Devam Ediyor' : 'Oylama Kapandı'}
                             </div>
+                            <h2 className="text-2xl font-bold text-white">{poll.title}</h2>
                         </div>
+                    </div>
 
-                        {/* Kart Alt Bilgi */}
-                        <div className="p-4 flex-1 flex flex-col">
-                            <h3
-                                className="font-bold text-white text-lg leading-tight line-clamp-1 mb-1"
-                                title={opt.title}
+                    {/* --- Lider ve Etkinlik Oluşturma Banner --- */}
+                    {(() => {
+                        const winner = poll.options.length > 0 ? poll.options[0] : null;
+                        return (
+                            poll.isOpen && winner && winner.voteCount > 0 && (
+                                <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border border-indigo-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                                    <div className="flex items-center gap-4 relative z-10">
+                                        <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                            <Trophy className="h-8 w-8" />
+                                        </div>
+                                        <div>
+                                            <div className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Şu Anki Lider</div>
+                                            <div className="text-white font-bold text-2xl md:text-3xl leading-none">
+                                                {winner.title}
+                                            </div>
+                                            <div className="text-gray-400 text-sm mt-1">{winner.voteCount} oy ile önde</div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setShowEventModal(true)}
+                                        className="relative z-10 px-6 py-3 rounded-xl bg-white text-indigo-900 hover:bg-indigo-50 font-bold text-sm transition shadow-xl hover:shadow-white/10 whitespace-nowrap flex items-center gap-2"
+                                    >
+                                        <Calendar className="h-4 w-4" />
+                                        Oylamayı Bitir & Planla
+                                    </button>
+                                </div>
+                            )
+                        );
+                    })()}
+
+                    {/* Film Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                        {poll.options.map((opt, index) => (
+                            <div
+                                key={opt.id}
+                                className={`relative group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 bg-gray-900 ${
+                                    opt.isVotedByMe
+                                        ? 'border-indigo-500 shadow-[0_0_25px_-5px_rgba(99,102,241,0.3)] ring-1 ring-indigo-500/50 scale-[1.02] z-10'
+                                        : 'border-white/10 hover:border-white/30 hover:-translate-y-1 hover:shadow-xl'
+                                }`}
                             >
-                                {opt.title}
-                            </h3>
+                                {/* Poster */}
+                                <div
+                                    className="aspect-[2/3] w-full relative overflow-hidden cursor-pointer bg-gray-800"
+                                    onClick={() => setSelectedMovieId(opt.tmdbId)}
+                                >
+                                    {opt.posterPath ? (
+                                        <img
+                                            src={`${IMG}/w500${opt.posterPath}`}
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            alt={opt.title}
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-gray-600">
+                                            <Film className="h-12 w-12" />
+                                        </div>
+                                    )}
 
-                            <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-                                <span>{opt.releaseYear || 'N/A'}</span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1 text-gray-500">
-                                    <Users className="h-3 w-3" /> {opt.addedBy}
-                                </span>
-                            </div>
+                                    {/* Overlay Gradient */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80" />
 
-                            <div className="mt-auto pt-4 border-t border-white/5">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-1.5 text-sm">
-                                        <Star className={`h-4 w-4 ${opt.voteCount > 0 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-600'}`} />
-                                        <span className="font-bold text-white">{opt.voteCount}</span>
-                                        <span className="text-gray-500">oy</span>
+                                    {/* Lider Rozeti */}
+                                    {index === 0 && opt.voteCount > 0 && (
+                                        <div className="absolute top-2 right-2 z-10">
+                                            <div className="bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1 backdrop-blur-md">
+                                                <Trophy className="h-3 w-3" /> #1
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Hover Action */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                        <span className="text-white text-xs font-bold border border-white/40 px-4 py-2 rounded-full bg-black/50 hover:bg-white hover:text-black transition-colors">
+                                            Detaylar
+                                        </span>
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => handleVote(opt.id)}
-                                    disabled={votingId !== null}
-                                    className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                                        opt.isVotedByMe
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 cursor-default'
-                                            : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white active:scale-95'
-                                    }`}
-                                >
-                                    {votingId === opt.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : opt.isVotedByMe ? (
-                                        <><Check className="h-4 w-4" /> Senin Oyun</>
-                                    ) : (
-                                        'Buna Oy Ver'
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                                {/* Bilgi ve Buton */}
+                                <div className="p-4 flex-1 flex flex-col relative">
+                                    <div className="absolute -top-10 left-4 right-4 text-shadow-sm">
+                                        <div className="flex items-center gap-1.5 text-white/90 font-bold text-lg">
+                                            <span className="text-yellow-400 drop-shadow-md">★</span>
+                                            {opt.voteCount}
+                                        </div>
+                                    </div>
 
-            {/* --- Film Detay Modalı --- */}
+                                    <h3 className="font-bold text-gray-100 text-sm leading-tight line-clamp-2 mb-2 min-h-[2.5rem]" title={opt.title}>
+                                        {opt.title}
+                                    </h3>
+
+                                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                                        <span>{opt.releaseYear || 'N/A'}</span>
+                                        <span className="flex items-center gap-1 truncate max-w-[80px]">
+                                            <span className="w-1 h-1 rounded-full bg-gray-500" />
+                                            {opt.addedBy}
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleVote(opt.id)}
+                                        disabled={votingId !== null || !poll.isOpen}
+                                        className={`mt-auto w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 ${
+                                            opt.isVotedByMe
+                                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 cursor-default'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/20'
+                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    >
+                                        {votingId === opt.id ? (
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : opt.isVotedByMe ? (
+                                            <><Check className="h-3.5 w-3.5" /> Oy Verildi</>
+                                        ) : (
+                                            'Oy Ver'
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            ) : (
+                events.length === 0 && (
+                    <div className="text-center py-24 bg-gray-900/30 rounded-3xl border border-dashed border-gray-700">
+                        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
+                            <Film className="h-8 w-8" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-2">Henüz Aktif Bir Şey Yok</h3>
+                        <p className="text-gray-400 mb-8 max-w-md mx-auto">Grubunda şimdilik sessizlik hakim. Arkadaşlarını topla ve bir film gecesi planla.</p>
+                        <Link to="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/20">
+                            <Film className="h-5 w-5" />
+                            Film Öner ve Başlat
+                        </Link>
+                    </div>
+                )
+            )}
+
+            {/* --- Modals --- */}
             {selectedMovieId && (
                 <MovieDetailModal
                     tmdbId={selectedMovieId}
                     onClose={() => setSelectedMovieId(null)}
+                />
+            )}
+
+            {showEventModal && poll && poll.options.length > 0 && (
+                <CreateEventModal
+                    groupId={Number(groupId)}
+                    pollId={poll.id}
+                    movie={poll.options[0]}
+                    onClose={() => setShowEventModal(false)}
+                    onSuccess={() => {
+                        loadData();
+                    }}
                 />
             )}
         </div>
