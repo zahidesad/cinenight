@@ -4,7 +4,7 @@ import { MoviesApi, type MovieDto } from "@/api/movies";
 import { fetchMyGroups, type GroupDto } from "@/api/groups";
 import { suggestMovie } from "@/api/polls";
 
-const IMG_BASE = import.meta.env.VITE_TMDB_IMAGE_BASE ?? "https://image.tmdb.org/t/p";
+const IMG_BASE = "https://image.tmdb.org/t/p";
 
 type Props = {
     tmdbId: number;

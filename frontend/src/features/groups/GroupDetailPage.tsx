@@ -4,7 +4,7 @@ import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
 import { ChevronLeft, Loader2, Users, Trophy, Share2, Check, FileText, Star } from 'lucide-react';
 import MovieDetailModal from '@/components/MovieDetailModal';
 
-const IMG = import.meta.env.VITE_TMDB_IMAGE_BASE ?? "https://image.tmdb.org/t/p";
+const IMG = "https://image.tmdb.org/t/p";
 
 export default function GroupDetailPage() {
     const { groupId } = useParams();

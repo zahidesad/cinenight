@@ -1,0 +1,11 @@
+MAIL_USER=YOUR_EMAIL -> It's required to send emails (gmail).
+MAIL_PASS=EMAIL_APPLICATION_PASSWORD -> Please check how to get password for application via gmail.
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_AUTH=true
+MAIL_STARTTLS=true
+APP_FRONTEND_BASE_URL=http://localhost:5173
+DB_ROOT=YOUR_DB_ROOT_USERNAME
+DB_PASSWORD=YOUR_DB_ROOT_PASSWORD
+
+TMDB_API_KEY=YOUR_API_KEY

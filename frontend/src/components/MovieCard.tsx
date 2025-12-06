@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MoviesApi } from "@/api/movies";
 import type { TmdbMovie } from "@/api/movies";
 
-const IMG = import.meta.env.VITE_TMDB_IMAGE_BASE ?? "https://image.tmdb.org/t/p";
+const IMG = "https://image.tmdb.org/t/p";
 
 type AnyMovie = TmdbMovie & {
     tmdbId?: number;
