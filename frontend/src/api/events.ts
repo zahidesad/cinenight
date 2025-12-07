@@ -1,16 +1,22 @@
 import { apiGet, apiPost } from './client';
 
+export type ParticipantDto = {
+    userId: number;
+    displayName: string;
+    avatarUrl?: string;
+    status: 'YES' | 'NO' | 'MAYBE';
+};
+
 export type EventDto = {
     id: number;
     title: string;
     movieTitle?: string;
     tmdbId?: number;
     startTime: string;
-    endTime?: string;
     locationText?: string;
-    locationUrl?: string;
     status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
     myRsvp?: 'YES' | 'NO' | 'MAYBE' | null;
+    participants?: ParticipantDto[];
 };
 
 export type RsvpStatus = 'YES' | 'NO' | 'MAYBE';

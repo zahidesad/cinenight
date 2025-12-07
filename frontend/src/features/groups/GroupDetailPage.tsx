@@ -32,8 +32,8 @@ export default function GroupDetailPage() {
     const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
     const [showEventModal, setShowEventModal] = useState(false);
     const [showMembersModal, setShowMembersModal] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // EKLENDİ
-    const [deleteLoading, setDeleteLoading] = useState(false); // EKLENDİ
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     const [inviteToken, setInviteToken] = useState<string | null>(null);
 
     // Verileri Yükle
@@ -47,10 +47,15 @@ export default function GroupDetailPage() {
                 fetchMyGroups()
             ]);
 
-            if (pollRes.ok && pollRes.data) setPoll(pollRes.data);
+            if (pollRes.ok) {
+                setPoll(pollRes.data);
+            } else {
+                setPoll(null); // Anket yoksa temizle
+            }
+
             if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
 
-            // Kullanıcının bu gruptaki rolünü bul
+            // Kullanıcının bu gruptaki rolünü ve davet token'ını bul
             if (groupsRes.ok && groupsRes.data) {
                 const currentGroup = groupsRes.data.find(g => g.id === Number(groupId));
                 if (currentGroup) {
@@ -87,17 +92,14 @@ export default function GroupDetailPage() {
     const handleRsvp = async (eventId: number, status: 'YES' | 'NO') => {
         setRsvpLoading(eventId);
         await rsvpEvent(eventId, status);
-        // Listeyi yenile ki buton rengi değişsin
+        // Listeyi yenile ki buton rengi ve katılımcı listesi güncellensin
         const eventsRes = await fetchGroupEvents(Number(groupId));
         if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
         setRsvpLoading(null);
     };
 
-    const confirmDeleteGroup = () => {
-        setShowDeleteConfirm(true);
-    };
-
-    const executeDeleteGroup = async () => {
+    // Grubu Silme
+    const handleDeleteGroup = async () => {
         setDeleteLoading(true);
         const res = await deleteGroup(Number(groupId));
         if (res.ok) {
@@ -109,6 +111,7 @@ export default function GroupDetailPage() {
         }
     };
 
+    // Davet Linki Kopyalama
     const handleCopyInvite = () => {
         if (!inviteToken) return;
         const link = `${window.location.origin}/join/${inviteToken}`;
@@ -153,7 +156,7 @@ export default function GroupDetailPage() {
                 <div className="flex gap-2">
                     {role === 'OWNER' && (
                         <button
-                            onClick={confirmDeleteGroup}
+                            onClick={() => setShowDeleteConfirm(true)}
                             className="p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition border border-red-500/20"
                             title="Grubu Sil"
                         >
@@ -174,7 +177,7 @@ export default function GroupDetailPage() {
                         className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-sm font-semibold border border-indigo-500/20 hover:border-indigo-500 shadow-lg shadow-indigo-500/5"
                     >
                         {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />}
-                        {copied ? "Link Kopyalandı" : "Arkadaşlarını Davet Et"}
+                        {copied ? "Link Kopyalandı" : "Davet Et"}
                     </button>
                 </div>
             </div>
@@ -238,6 +241,28 @@ export default function GroupDetailPage() {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Katılımcı Listesi (Yeni Eklendi) */}
+                                    {evt.participants && evt.participants.length > 0 && (
+                                        <div className="flex items-center gap-2 mb-6 pt-4 border-t border-white/5">
+                                            <div className="flex -space-x-2 overflow-hidden">
+                                                {evt.participants.map(p => (
+                                                    <div
+                                                        key={p.userId}
+                                                        className="inline-flex h-8 w-8 rounded-full ring-2 ring-gray-900 bg-gray-700 items-center justify-center text-xs font-bold text-white cursor-help"
+                                                        title={p.displayName}
+                                                    >
+                                                        {p.avatarUrl ? (
+                                                            <img src={p.avatarUrl} alt={p.displayName} className="h-full w-full rounded-full object-cover" />
+                                                        ) : (
+                                                            p.displayName.charAt(0).toUpperCase()
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <span className="text-xs text-gray-500 ml-1 font-medium">geliyor</span>
+                                        </div>
+                                    )}
 
                                     {/* Aksiyon Butonları */}
                                     <div className="flex gap-3 mt-auto">
@@ -431,15 +456,16 @@ export default function GroupDetailPage() {
                 />
             )}
 
-            {showEventModal && poll && (
+            {showEventModal && poll && poll.options.length > 0 && (
                 <CreateEventModal
                     groupId={Number(groupId)}
                     pollId={poll.id}
-                    movies={winners} // Kazananların listesini gönderiyoruz (Beraberlik için)
+                    movies={winners}
                     onClose={() => setShowEventModal(false)}
                     onSuccess={() => {
                         loadData(); // Sayfayı yenile
-                        setPoll(prev => prev ? { ...prev, isOpen: false } : null); // UI'dan Planla butonunu anında kaldır
+                        // UI'ı anında güncelle (Planla butonunu kaldır)
+                        setPoll(prev => prev ? { ...prev, isOpen: false } : null);
                     }}
                 />
             )}
@@ -455,7 +481,7 @@ export default function GroupDetailPage() {
             <ConfirmModal
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
-                onConfirm={executeDeleteGroup}
+                onConfirm={handleDeleteGroup}
                 title="Grubu Sil"
                 description="Bu grubu ve içindeki tüm etkinlik, anket ve geçmiş verileri kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz."
                 confirmText="Evet, Grubu Sil"
