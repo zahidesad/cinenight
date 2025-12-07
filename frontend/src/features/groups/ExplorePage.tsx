@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchExploreGroups, joinGroup, type GroupDto } from '@/api/groups';
-import { UserPlus, Loader2, Globe, Calendar, MapPin, Laptop } from 'lucide-react';
+import { UserPlus, Loader2, Globe, Calendar, MapPin, Laptop, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { me } from '@/api/auth';
 
@@ -31,7 +31,7 @@ export default function ExplorePage() {
             return;
         }
 
-        // 2. Katılma isteği at (DÜZELTME: joinGroup kullanıldı)
+        // 2. Katılma isteği at
         const res = await joinGroup(group.id);
 
         if (res.ok) {
@@ -42,12 +42,16 @@ export default function ExplorePage() {
         }
     };
 
-    // Basit bir regex ile description içindeki bilgileri ayrıştırmayı deneyelim
-    // (Gerçek bir çözümde bunlar ayrı field olmalıydı ama şimdilik görseli düzeltelim)
+    // Açıklama metnini analiz et
     const parseDescription = (desc: string = "") => {
         const lines = desc.split('\n');
-        // İlk satır genelde Tür (Online/Fiziksel)
-        // İkinci satır Tarih/Saat
+        // Eğer bizim modal ile oluşturulmuş formatlı bir metinse emoji içerir
+        const isFormatted = desc.includes('🌐') || desc.includes('📍');
+
+        if (!isFormatted) {
+            return { type: 'GENEL', text: desc }; // Düz metin modu
+        }
+
         return {
             type: lines[0] || "",
             date: lines[1] || "",
@@ -71,6 +75,8 @@ export default function ExplorePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {groups.map(g => {
                         const info = parseDescription(g.description);
+                        const isGeneral = info.type === 'GENEL';
+
                         return (
                             <div key={g.id} className="group relative flex flex-col rounded-2xl border border-white/10 bg-gray-900/60 p-6 hover:bg-gray-900 transition-all hover:border-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/10">
                                 {/* Üst Etiketler */}
@@ -87,22 +93,33 @@ export default function ExplorePage() {
 
                                 {/* Bilgi Satırları */}
                                 <div className="space-y-2 mb-6 text-sm text-gray-400">
-                                    {info.type && (
-                                        <div className="flex items-center gap-2">
-                                            {info.type.includes("Online") ? <Laptop className="h-4 w-4 text-sky-400" /> : <MapPin className="h-4 w-4 text-rose-400" />}
-                                            <span className="text-gray-300">{info.type}</span>
+                                    {isGeneral ? (
+                                        // Düz Metin Modu (Info İkonu ile)
+                                        <div className="flex items-start gap-2">
+                                            <Info className="h-4 w-4 mt-0.5 text-gray-500 shrink-0" />
+                                            <p className="line-clamp-3 leading-relaxed">{info.text || "Açıklama yok."}</p>
                                         </div>
-                                    )}
-                                    {info.date && (
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-indigo-400" />
-                                            <span>{info.date.replace('📅 ', '').replace('⏰ ', '')}</span>
-                                        </div>
-                                    )}
-                                    {info.note && (
-                                        <p className="text-xs text-gray-500 line-clamp-2 mt-2 italic border-t border-white/5 pt-2">
-                                            "{info.note.replace('📝 Not: ', '')}"
-                                        </p>
+                                    ) : (
+                                        // Formatlı Mod (Özel İkonlar)
+                                        <>
+                                            {info.type && (
+                                                <div className="flex items-center gap-2">
+                                                    {info.type.includes("Online") ? <Laptop className="h-4 w-4 text-sky-400" /> : <MapPin className="h-4 w-4 text-rose-400" />}
+                                                    <span className="text-gray-300">{info.type}</span>
+                                                </div>
+                                            )}
+                                            {info.date && (
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-indigo-400" />
+                                                    <span>{info.date.replace('📅 ', '').replace('⏰ ', '')}</span>
+                                                </div>
+                                            )}
+                                            {info.note && (
+                                                <p className="text-xs text-gray-500 line-clamp-2 mt-2 italic border-t border-white/5 pt-2">
+                                                    "{info.note.replace('📝 Not: ', '')}"
+                                                </p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 

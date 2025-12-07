@@ -36,18 +36,30 @@ export default function JoinGroupPage() {
     // --- HATA DURUMU ---
     if (status === 'ERROR') {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in duration-300">
-                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-6 border border-red-500/20">
+            <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in duration-300 px-4">
+                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-6 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
                     <ShieldAlert className="h-10 w-10" />
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-2">Katılma Başarısız</h2>
-                <p className="text-gray-400 mb-8 max-w-md mx-auto">{errorMsg}</p>
-                <button
-                    onClick={() => navigate('/')}
-                    className="px-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-medium transition"
-                >
-                    Ana Sayfaya Dön
-                </button>
+                <p className="text-gray-400 mb-8 max-w-md mx-auto leading-relaxed">
+                    {errorMsg === "Link geçersiz veya süresi dolmuş."
+                        ? "Bu davet bağlantısı artık geçerli değil. Grup sahibinden yeni bir bağlantı isteyebilirsin."
+                        : errorMsg}
+                </p>
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="px-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-medium transition border border-white/10"
+                    >
+                        Ana Sayfa
+                    </button>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition shadow-lg shadow-indigo-500/20"
+                    >
+                        Gruplarım
+                    </button>
+                </div>
             </div>
         );
     }

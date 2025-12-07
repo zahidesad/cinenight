@@ -465,7 +465,7 @@ export default function GroupDetailPage() {
                     onSuccess={() => {
                         loadData(); // Sayfayı yenile
                         // UI'ı anında güncelle (Planla butonunu kaldır)
-                        setPoll(prev => prev ? { ...prev, isOpen: false } : null);
+                        setPoll(null);
                     }}
                 />
             )}
