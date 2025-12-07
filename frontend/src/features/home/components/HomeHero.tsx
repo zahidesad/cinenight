@@ -36,7 +36,7 @@ export default function HomeHero({
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold text-white">Bu akşam ne izliyoruz?</h1>
                     <p className="mt-2 text-gray-300">
-                        Arkadaşlarınla film öner, oy ver ve kazanan filme göre izleme gecesini planla. RSVP ve iCal ile herkes senkron.
+                        Arkadaşlarınla film öner, oy ver ve kazanan filme göre izleme gecesini planla.
                     </p>
                 </div>
 

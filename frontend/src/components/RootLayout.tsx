@@ -30,6 +30,7 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
 
                     <div className="hidden items-center gap-8 md:flex">
                         {user ? (
+                            /* GİRİŞ YAPMIŞ KULLANICI MENÜSÜ */
                             <>
                                 <Link
                                     to="/dashboard"
@@ -43,10 +44,11 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                                 </Link>
                             </>
                         ) : (
+                            /* MİSAFİR KULLANICI MENÜSÜ - SADECE CANLI DEMO */
                             <>
-                                <Link to="/explore" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Keşfet</Link>
-                                <a href="/#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Özellikler</a>
-                                <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Canlı Demo</Link>
+                                <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                                    Canlı Demo
+                                </Link>
                             </>
                         )}
                     </div>
@@ -54,7 +56,6 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                     <div className="flex items-center gap-4">
                         {user ? (
                             <div className="flex items-center gap-4 pl-6 border-l border-white/10">
-                                {/* Kullanıcı adı ve e-postası artık profile linki oldu */}
                                 <Link
                                     to="/profile"
                                     className="hidden text-right sm:block hover:opacity-80 transition cursor-pointer"
