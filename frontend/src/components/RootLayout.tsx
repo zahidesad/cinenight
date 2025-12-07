@@ -102,10 +102,13 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
             </main>
 
             <footer className="border-t border-white/5 bg-gray-950 py-12 mt-auto">
-                <div className="container mx-auto px-4 text-center">
+                <div className="container mx-auto px-4 text-center space-y-2">
                     <p className="text-sm text-gray-500">
                         © {new Date().getFullYear()} CineNight · Film Gecesi Planlayıcı
                     </p>
+                    <a href="http://localhost:8080/about" className="text-xs text-indigo-500/60 hover:text-indigo-400 transition underline">
+                        Sistem Bilgisi (SSR)
+                    </a>
                 </div>
             </footer>
         </div>
