@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import { login, UserDto } from '@/api/auth';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -12,7 +12,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const [password, setPassword] = useState('');
     const [showPw, setShowPw] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,7 +22,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         const res = await login(email, password);
         if (res.ok && res.data) {
             onLoginSuccess(res.data);
-            navigate('/');
+
+            const redirectUrl = searchParams.get('redirect') || '/';
+            navigate(redirectUrl);
         } else {
             setError(res.error || 'Giriş yapılamadı. Bilgileri kontrol et.');
         }

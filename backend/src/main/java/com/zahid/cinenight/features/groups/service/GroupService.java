@@ -81,19 +81,8 @@ public class GroupService {
     @Transactional
     public Long joinByToken(String token, Long userId) {
         Group g = groups.findByInviteToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Geçersiz davet bağlantısı."));
-
-        if (members.existsById(new GroupMemberId(g.getId(), userId))) {
-            return g.getId();
-        }
-
-        GroupMember m = new GroupMember();
-        m.setId(new GroupMemberId(g.getId(), userId));
-        m.setGroup(g);
-        m.setUser(users.findById(userId).orElseThrow());
-        m.setRole(GroupRole.MEMBER);
-        members.save(m);
-
+                .orElseThrow(() -> new IllegalArgumentException("Geçersiz veya süresi dolmuş davet bağlantısı."));
+        members.joinGroupNative(g.getId(), userId, GroupRole.MEMBER.name());
         return g.getId();
     }
 

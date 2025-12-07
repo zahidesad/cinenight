@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { me, type UserDto } from '@/api/auth';
 import RootLayout from '@/components/RootLayout';
 import AuthLayout from '@/components/AuthLayout';
+import ProtectedRoute from '@/components/ProtectedRoute'; // EKLENDİ
+
 import HomePage from '@/features/home/HomePage';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
@@ -28,7 +30,6 @@ export default function AppRoutes() {
 
     const handleLogin = (user: UserDto) => {
         setUser(user);
-        navigate('/');
     };
 
     const handleLogout = () => {
@@ -46,21 +47,26 @@ export default function AppRoutes() {
 
     return (
         <Routes>
+            {/* PUBLIC: Herkes görebilir */}
             <Route element={<RootLayout user={user} onLogout={handleLogout} />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/try" element={<TryDemoPage />} />
-                <Route path="/dashboard" element={<GroupsPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/groups/:groupId" element={<GroupDetailPage />} />
+
+                {/* PROTECTED: Sadece giriş yapmış kullanıcılar */}
+                <Route element={<ProtectedRoute user={user} />}>
+                    <Route path="/dashboard" element={<GroupsPage />} />
+                    <Route path="/groups/:groupId" element={<GroupDetailPage />} />
+                    <Route path="/join/:token" element={<JoinGroupPage />} />
+                </Route>
             </Route>
 
+            {/* AUTH: Giriş/Kayıt işlemleri */}
             <Route element={<AuthLayout />}>
                 <Route path="/login" element={<LoginPage onLoginSuccess={handleLogin} />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/join/:groupId" element={<JoinGroupPage />} />
-                <Route path="/join/:token" element={<JoinGroupPage />} />
             </Route>
         </Routes>
     );
