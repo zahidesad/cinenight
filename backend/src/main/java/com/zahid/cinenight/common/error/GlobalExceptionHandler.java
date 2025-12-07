@@ -6,6 +6,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource; // Import
+import org.springframework.context.i18n.LocaleContextHolder; // Import
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,8 +24,21 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
 
     public record ApiError(String code, String message, String errId) {}
+
+    private String getMsg(String key) {
+        try {
+            return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
+        } catch (Exception e) {
+            return key;
+        }
+    }
 
     /* ----------------------- AUTH ERRORS ----------------------- */
 
@@ -32,19 +47,18 @@ public class GlobalExceptionHandler {
         log.warn("Auth failed [{} {}]: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
 
         String code = "INVALID_CREDENTIALS";
-        String message = "E-posta veya şifre yanlış.";
-        String errId = "";
+        String message = getMsg("auth.login.failed");
 
         if (ex instanceof DisabledException) {
             code = "ACCOUNT_DISABLED";
-            message = "Hesabın devre dışı. Lütfen e-postanı doğrula.";
+            message = getMsg("auth.account.disabled");
         } else if (ex instanceof LockedException) {
             code = "ACCOUNT_LOCKED";
-            message = "Hesabın kilitli.";
+            message = getMsg("auth.account.locked");
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiError(code, message, errId));
+                .body(new ApiError(code, message, ""));
     }
 
     /* --------------------- CLIENT (400/403) -------------------- */
@@ -63,7 +77,7 @@ public class GlobalExceptionHandler {
         String msg = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining(", "));
-        if (msg.isBlank()) msg = "Geçersiz istek.";
+        if (msg.isBlank()) msg = getMsg("error.validation.default");
         return ResponseEntity.badRequest().body(ApiResponse.error(msg));
     }
 
@@ -72,7 +86,7 @@ public class GlobalExceptionHandler {
                                                                 HttpServletRequest req) {
         logWarn(req, ex);
         String msg = ex.getConstraintViolations().stream()
-                .findFirst().map(ConstraintViolation::getMessage).orElse("Geçersiz istek.");
+                .findFirst().map(ConstraintViolation::getMessage).orElse(getMsg("error.validation.default"));
         return ResponseEntity.badRequest().body(ApiResponse.error(msg));
     }
 
@@ -81,7 +95,7 @@ public class GlobalExceptionHandler {
                                                                   HttpServletRequest req) {
         logWarn(req, ex);
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Bu işlem için yetkin yok."));
+                .body(ApiResponse.error(getMsg("error.access.denied")));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -89,7 +103,7 @@ public class GlobalExceptionHandler {
                                                                    HttpServletRequest req) {
         logWarn(req, ex);
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("İşlem gerçekleştirilemedi. Lütfen bilgileri kontrol edin."));
+                .body(ApiResponse.error(getMsg("error.data.integrity")));
     }
 
     /* ----------------------- FALLBACK (500) -------------------- */
@@ -97,9 +111,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleAny(Exception ex, HttpServletRequest req) {
         String id = logAndGetErrId(ex, req);
-        // Kullanıcıya teknik mesaj göstermiyoruz
+        String msg = getMsg("error.unexpected") + " (errId=" + id + ")";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin. (errId=" + id + ")"));
+                .body(ApiResponse.error(msg));
     }
 
     /* --------------------------- UTIL -------------------------- */

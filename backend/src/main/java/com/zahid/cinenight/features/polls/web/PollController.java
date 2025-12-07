@@ -5,6 +5,8 @@ import com.zahid.cinenight.features.polls.service.PollService;
 import com.zahid.cinenight.features.polls.service.PollService.*;
 import com.zahid.cinenight.features.users.domain.UserRepository;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,14 +20,16 @@ public class PollController {
 
     private final PollService service;
     private final UserRepository users;
+    private final MessageSource messageSource;
 
-    public PollController(PollService service, UserRepository users) {
+    public PollController(PollService service, UserRepository users, MessageSource messageSource) {
         this.service = service;
         this.users = users;
+        this.messageSource = messageSource;
     }
 
     private Long uid(UserDetails p) {
-        if (p == null) throw new AccessDeniedException("Giriş gerekli.");
+        if (p == null) throw new AccessDeniedException(messageSource.getMessage("auth.login.required", null, LocaleContextHolder.getLocale()));
         return users.findByEmail(p.getUsername()).orElseThrow().getId();
     }
 

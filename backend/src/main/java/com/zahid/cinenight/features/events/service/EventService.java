@@ -12,6 +12,8 @@ import com.zahid.cinenight.features.users.domain.UserRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -70,11 +72,12 @@ public class EventService {
     private final MovieRepository movies;
     private final MovieService movieService;
     private final UserRepository users;
+    private final MessageSource messageSource;
 
     public EventService(WatchEventRepository events, RsvpRepository rsvps,
                         GroupRepository groups, GroupMemberRepository members,
                         MovieRepository movies, MovieService movieService,
-                        UserRepository users) {
+                        UserRepository users, MessageSource messageSource) {
         this.events = events;
         this.rsvps = rsvps;
         this.groups = groups;
@@ -82,19 +85,24 @@ public class EventService {
         this.movies = movies;
         this.movieService = movieService;
         this.users = users;
+        this.messageSource = messageSource;
+    }
+
+    private String getMsg(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     /** Grup üyesi mi kontrolü */
     private void ensureMember(Long groupId, Long userId) {
         var key = new GroupMemberId(groupId, userId);
         if (members.findById(key).isEmpty())
-            throw new IllegalArgumentException("Bu gruba üye değilsiniz.");
+            throw new IllegalArgumentException(getMsg("group.not.member"));
     }
 
     /** Event oluştur */
     @Transactional
     public EventDto create(CreateEventReq req, Long currentUserId) {
-        Group g = groups.findById(req.groupId()).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
+        Group g = groups.findById(req.groupId()).orElseThrow(() -> new IllegalArgumentException(getMsg("group.not.found")));
         ensureMember(g.getId(), currentUserId);
 
         WatchEvent e = new WatchEvent();
@@ -124,7 +132,7 @@ public class EventService {
     }
 
     public EventDto get(Long eventId, Long currentUserId) {
-        WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException("Etkinlik bulunamadı."));
+        WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException(getMsg("event.not.found")));
         ensureMember(e.getGroup().getId(), currentUserId);
 
         // Bu etkinliğe ait tüm RSVP'ler
@@ -157,7 +165,7 @@ public class EventService {
     /** RSVP upsert */
     @Transactional
     public void rsvp(Long eventId, Long userId, RsvpReq req) {
-        WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException("Etkinlik bulunamadı."));
+        WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException(getMsg("event.not.found")));
         ensureMember(e.getGroup().getId(), userId);
 
         var existing = rsvps.findAll().stream()
@@ -176,7 +184,7 @@ public class EventService {
     /** ICS üretimi */
     @Transactional
     public String ics(Long eventId) {
-        WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException("Etkinlik bulunamadı."));
+        WatchEvent e = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException(getMsg("event.not.found")));
         if (e.getIcalUid() == null || e.getIcalUid().isBlank()) {
             e.setIcalUid(generateUidIfAbsent(null));
             events.save(e);

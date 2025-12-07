@@ -31,6 +31,10 @@ spring:
       mail.smtp.auth: ${MAIL_AUTH:false}
       mail.smtp.starttls.enable: ${MAIL_STARTTLS:false}
 
+  messages:
+    basename: messages
+    encoding: UTF-8
+
 logging.level:
   org.springframework.mail: DEBUG
   com.sun.mail: DEBUG

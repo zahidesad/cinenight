@@ -7,6 +7,8 @@ import com.zahid.cinenight.features.events.service.EventService.EventDto;
 import com.zahid.cinenight.features.events.service.EventService.RsvpReq;
 import com.zahid.cinenight.features.users.domain.UserRepository;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +23,17 @@ public class EventController {
 
     private final EventService service;
     private final UserRepository users;
+    private final MessageSource messageSource;
 
-    public EventController(EventService service, UserRepository users) {
+    public EventController(EventService service, UserRepository users, MessageSource messageSource) {
         this.service = service;
         this.users = users;
+        this.messageSource = messageSource;
     }
 
     private Long currentUserId(UserDetails principal) {
-        if (principal == null) throw new AccessDeniedException("Giriş gerekli.");
+        if (principal == null)
+            throw new AccessDeniedException(messageSource.getMessage("auth.login.required", null, LocaleContextHolder.getLocale())); // LOKALİZE
         return users.findByEmail(principal.getUsername()).orElseThrow().getId();
     }
 

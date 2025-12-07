@@ -41,4 +41,4 @@ export function verifyEmail(token: string): Promise<ApiResponse<string>> {
     return apiPost<string>(`/auth/verify?token=${token}`);
 }
 
-export const AuthApi = { login, register, forgot, resetPassword, me, logout,verifyEmail };
+export const AuthApi = { login, register, forgot,  resetPassword, me, logout,verifyEmail };

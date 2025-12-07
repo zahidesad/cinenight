@@ -1,13 +1,14 @@
 package com.zahid.cinenight.web;
 
 import com.zahid.cinenight.features.users.domain.UserRepository;
-import org.springframework.stereotype.Controller;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 @Controller
 public class WebController {
@@ -22,9 +23,12 @@ public class WebController {
     }
 
     @GetMapping("/about")
-    public String aboutPage(Model model) {
+    public String aboutPage(Model model, Locale locale) {
         long userCount = userRepository.count();
-        String serverTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss"));
+
+        String serverTime = LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss", locale)
+        );
 
         model.addAttribute("appName", "CineNight");
         model.addAttribute("studentName", "Zahid Esad");

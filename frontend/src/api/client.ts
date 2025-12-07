@@ -1,3 +1,5 @@
+import i18n from '@/i18n';
+
 export type ApiResponse<T> =
     | { ok: true; data: T; error: null }
     | { ok: false; data: null; error: string };
@@ -53,6 +55,7 @@ async function request<T>(
         credentials: "include",
         headers: {
             Accept: "application/json",
+            "Accept-Language": i18n.language || "tr",
             ...(body != null ? { "Content-Type": "application/json" } : {}),
             ...(init?.headers ?? {}),
         },

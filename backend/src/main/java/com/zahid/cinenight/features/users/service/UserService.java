@@ -5,6 +5,8 @@ import com.zahid.cinenight.features.users.domain.*;
 import com.zahid.cinenight.features.users.dto.AuthDtos.UserDto;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ public class UserService {
     private final VerificationTokenRepository verifyTokens;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final MessageSource messageSource; // EKLENDİ
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
@@ -28,16 +31,22 @@ public class UserService {
     public UserService(UserRepository users,
                        VerificationTokenRepository verifyTokens,
                        EmailService emailService,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       MessageSource messageSource) {
         this.users = users;
         this.verifyTokens = verifyTokens;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.messageSource = messageSource;
+    }
+
+    private String getMsg(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     @Transactional
     public UserDto updateProfile(Long userId, UpdateProfileReq req) {
-        User user = users.findById(userId).orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
+        User user = users.findById(userId).orElseThrow(() -> new IllegalArgumentException(getMsg("user.not.found"))); 
 
         if (req.displayName() != null && !req.displayName().isBlank()) {
             user.setDisplayName(req.displayName());
@@ -45,7 +54,7 @@ public class UserService {
 
         if (req.email() != null && !req.email().isBlank() && !req.email().equals(user.getEmail())) {
             if (users.existsByEmail(req.email())) {
-                throw new IllegalArgumentException("Bu e-posta adresi zaten kullanımda.");
+                throw new IllegalArgumentException(getMsg("auth.email.exists")); 
             }
 
             user.setPendingEmail(req.email());
@@ -71,11 +80,11 @@ public class UserService {
     @Transactional
     public void confirmEmailChange(String token) {
         VerificationToken vt = verifyTokens.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Geçersiz token."));
+                .orElseThrow(() -> new IllegalArgumentException(getMsg("auth.token.invalid"))); 
 
         if (vt.getExpiresAt().isBefore(LocalDateTime.now())) {
             verifyTokens.delete(vt);
-            throw new IllegalArgumentException("Token süresi dolmuş.");
+            throw new IllegalArgumentException(getMsg("auth.token.expired")); 
         }
 
         User user = vt.getUser();
@@ -93,12 +102,12 @@ public class UserService {
 
     @Transactional
     public void changePassword(Long userId, ChangePasswordReq req) {
-        User user = users.findById(userId).orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
+        User user = users.findById(userId).orElseThrow(() -> new IllegalArgumentException(getMsg("user.not.found")));
         if (!passwordEncoder.matches(req.currentPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Mevcut şifreniz yanlış.");
+            throw new IllegalArgumentException(getMsg("user.password.wrong")); 
         }
         if (passwordEncoder.matches(req.newPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Yeni şifre eskisiyle aynı olamaz.");
+            throw new IllegalArgumentException(getMsg("user.password.same")); 
         }
         user.setPasswordHash(passwordEncoder.encode(req.newPassword()));
         users.save(user);

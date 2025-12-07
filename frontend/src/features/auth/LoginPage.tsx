@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import { login, UserDto } from '@/api/auth';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface LoginPageProps {
     onLoginSuccess: (user: UserDto) => void;
@@ -15,6 +16,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const { t } = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,7 +39,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     return (
         <div className="space-y-6">
             <div className="text-center">
-                <h2 className="text-2xl font-semibold text-gray-200">Giriş Yap</h2>
+                <h2 className="text-2xl font-semibold text-gray-200">{t('login')}</h2>
                 <p className="mt-1 text-sm text-gray-400">Film gecelerine kaldığın yerden devam et.</p>
             </div>
 

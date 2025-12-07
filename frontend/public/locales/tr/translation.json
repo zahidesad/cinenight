@@ -1,0 +1,9 @@
+{
+  "welcome": "Hoş Geldin",
+  "login": "Giriş Yap",
+  "register": "Kayıt Ol",
+  "email": "E-posta",
+  "password": "Şifre",
+  "search_placeholder": "Film ara... (ör. Inception)",
+  "error_generic": "Bir hata oluştu"
+}

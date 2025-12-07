@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { UserDto, logout } from '@/api/auth';
 import { LayoutDashboard, LogOut } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface RootLayoutProps {
     user: UserDto | null;
@@ -54,8 +55,11 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {/* 2. Dil Değiştirici Eklendi (Hem girişli hem girişsiz görünür) */}
+                        <LanguageSwitcher />
+
                         {user ? (
-                            <div className="flex items-center gap-4 pl-6 border-l border-white/10">
+                            <div className="flex items-center gap-4 pl-4 border-l border-white/10">
                                 <Link
                                     to="/profile"
                                     className="hidden text-right sm:block hover:opacity-80 transition cursor-pointer"
@@ -74,7 +78,7 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
                                 <Link
                                     to="/login"
                                     className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-3 py-2"

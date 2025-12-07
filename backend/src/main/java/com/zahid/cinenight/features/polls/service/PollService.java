@@ -10,6 +10,8 @@ import com.zahid.cinenight.features.movies.domain.MovieRepository;
 import com.zahid.cinenight.features.movies.service.MovieService;
 import com.zahid.cinenight.features.polls.domain.*;
 import com.zahid.cinenight.features.users.domain.UserRepository;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -44,11 +46,12 @@ public class PollService {
     private final MovieRepository movies;
     private final MovieService movieService;
     private final UserRepository users;
+    private final MessageSource messageSource; // EKLENDİ
 
     public PollService(GroupRepository groups, GroupMemberRepository members,
                        PollRepository polls, PollOptionRepository options,
                        VoteRepository votes, MovieRepository movies, MovieService movieService,
-                       UserRepository users) {
+                       UserRepository users, MessageSource messageSource) {
         this.groups = groups;
         this.members = members;
         this.polls = polls;
@@ -57,17 +60,22 @@ public class PollService {
         this.movies = movies;
         this.movieService = movieService;
         this.users = users;
+        this.messageSource = messageSource;
+    }
+
+    private String getMsg(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     private void ensureMember(Long groupId, Long userId) {
         var key = new GroupMemberId(groupId, userId);
-        GroupMember m = members.findById(key).orElseThrow(() -> new IllegalArgumentException("Bu gruba üye değilsiniz."));
-        if (m == null) throw new IllegalArgumentException("Bu gruba üye değilsiniz.");
+        GroupMember m = members.findById(key).orElseThrow(() -> new IllegalArgumentException(getMsg("group.not.member"))); 
+        if (m == null) throw new IllegalArgumentException(getMsg("group.not.member"));
     }
 
     @Transactional
     public PollDto create(CreatePollReq req, Long userId) {
-        Group g = groups.findById(req.groupId()).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
+        Group g = groups.findById(req.groupId()).orElseThrow(() -> new IllegalArgumentException(getMsg("group.not.found"))); 
         ensureMember(g.getId(), userId);
 
         Poll p = new Poll();
@@ -86,9 +94,9 @@ public class PollService {
 
     @Transactional
     public void addOption(AddOptionReq req, Long userId) {
-        Poll p = polls.findById(req.pollId()).orElseThrow(() -> new IllegalArgumentException("Anket bulunamadı."));
+        Poll p = polls.findById(req.pollId()).orElseThrow(() -> new IllegalArgumentException(getMsg("poll.not.found"))); 
         ensureMember(p.getGroup().getId(), userId);
-        if (!Boolean.TRUE.equals(p.getIsOpen())) throw new IllegalArgumentException("Anket kapalı.");
+        if (!Boolean.TRUE.equals(p.getIsOpen())) throw new IllegalArgumentException(getMsg("poll.closed")); 
 
         String lang = (req.language() == null || req.language().isBlank()) ? "tr-TR" : req.language();
         movieService.byId(req.tmdbId(), lang);
@@ -109,12 +117,12 @@ public class PollService {
 
     @Transactional
     public void vote(Long pollId, VoteReq req, Long userId) {
-        Poll p = polls.findById(pollId).orElseThrow(() -> new IllegalArgumentException("Anket bulunamadı."));
+        Poll p = polls.findById(pollId).orElseThrow(() -> new IllegalArgumentException(getMsg("poll.not.found"))); 
         ensureMember(p.getGroup().getId(), userId);
-        if (!Boolean.TRUE.equals(p.getIsOpen())) throw new IllegalArgumentException("Anket kapalı.");
+        if (!Boolean.TRUE.equals(p.getIsOpen())) throw new IllegalArgumentException(getMsg("poll.closed")); 
 
-        PollOption opt = options.findById(req.optionId()).orElseThrow(() -> new IllegalArgumentException("Seçenek bulunamadı."));
-        if (!opt.getPoll().getId().equals(pollId)) throw new IllegalArgumentException("Seçenek bu ankete ait değil.");
+        PollOption opt = options.findById(req.optionId()).orElseThrow(() -> new IllegalArgumentException(getMsg("option.not.found"))); 
+        if (!opt.getPoll().getId().equals(pollId)) throw new IllegalArgumentException(getMsg("option.not.in.poll")); 
 
         var existing = votes.findByPollIdAndUserId(pollId, userId);
         if (existing.isPresent()) {
@@ -132,7 +140,7 @@ public class PollService {
     }
 
     public List<OptionResult> results(Long pollId) {
-        Poll p = polls.findById(pollId).orElseThrow(() -> new IllegalArgumentException("Anket bulunamadı."));
+        Poll p = polls.findById(pollId).orElseThrow(() -> new IllegalArgumentException(getMsg("poll.not.found"))); 
         return options.findAll().stream()
                 .filter(o -> o.getPoll().getId().equals(p.getId()))
                 .map(o -> new OptionResult(
@@ -145,20 +153,20 @@ public class PollService {
     }
 
     public PollDto getByPublicToken(String token) {
-        Poll p = polls.findByPublicToken(token).orElseThrow(() -> new IllegalArgumentException("Geçersiz token."));
+        Poll p = polls.findByPublicToken(token).orElseThrow(() -> new IllegalArgumentException(getMsg("poll.token.invalid"))); 
         return PollDto.of(p);
     }
 
     @Transactional
     public void close(Long pollId, Long userId) {
-        Poll p = polls.findById(pollId).orElseThrow(() -> new IllegalArgumentException("Anket bulunamadı."));
+        Poll p = polls.findById(pollId).orElseThrow(() -> new IllegalArgumentException(getMsg("poll.not.found"))); 
         ensureMember(p.getGroup().getId(), userId);
         p.setIsOpen(false);
         polls.save(p);
     }
 
     @Transactional
-    public String suggest(SuggestMovieReq req, Long userId) { // void -> String oldu
+    public String suggest(SuggestMovieReq req, Long userId) {
         ensureMember(req.groupId(), userId);
 
         Poll poll = polls.findFirstByGroupIdAndIsOpenTrueOrderByCreatedAtDesc(req.groupId())
@@ -166,8 +174,8 @@ public class PollService {
                     Group g = groups.findById(req.groupId()).orElseThrow();
                     Poll newPoll = new Poll();
                     newPoll.setGroup(g);
-                    newPoll.setTitle("Film Önerileri");
-                    newPoll.setDescription("Otomatik oluşturulan öneri listesi.");
+                    newPoll.setTitle(getMsg("poll.default.title")); 
+                    newPoll.setDescription(getMsg("poll.default.desc")); 
                     newPoll.setIsOpen(true);
                     newPoll.setAllowAddOptions(true);
                     newPoll.setCreatedBy(users.findById(userId).orElse(null));
@@ -197,7 +205,7 @@ public class PollService {
         ensureMember(groupId, userId);
 
         Poll poll = polls.findFirstByGroupIdAndIsOpenTrueOrderByCreatedAtDesc(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Bu grupta aktif bir anket yok."));
+                .orElseThrow(() -> new IllegalArgumentException(getMsg("poll.active.not.found"))); 
 
         List<PollOption> pollOptions = options.findAll().stream()
                 .filter(o -> o.getPoll().getId().equals(poll.getId()))
@@ -218,11 +226,11 @@ public class PollService {
                             o.getMovie().getTitle(),
                             o.getMovie().getPosterPath(),
                             o.getMovie().getReleaseYear(),
-                            o.getAddedBy() != null ? o.getAddedBy().getDisplayName() : "Anonim",
+                            o.getAddedBy() != null ? o.getAddedBy().getDisplayName() : getMsg("user.anonymous"),
                             count,
                             isVoted
                     );
-                }).sorted((a, b) -> Long.compare(b.voteCount(), a.voteCount())) // En çok oy alan en üstte
+                }).sorted((a, b) -> Long.compare(b.voteCount(), a.voteCount()))
                 .toList();
 
         return new PollDetailDto(

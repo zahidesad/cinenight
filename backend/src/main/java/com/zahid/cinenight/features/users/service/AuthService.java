@@ -6,6 +6,8 @@ import com.zahid.cinenight.features.users.dto.AuthDtos.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +32,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final VerificationTokenRepository verifyTokens;
+    private final MessageSource messageSource;
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
@@ -40,7 +43,8 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        SecurityContextRepository securityContextRepository,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       MessageSource messageSource) {
         this.users = users;
         this.tokens = tokens;
         this.verifyTokens = verifyTokens;
@@ -48,12 +52,17 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.emailService = emailService;
+        this.messageSource = messageSource;
+    }
+
+    private String getMsg(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     @Transactional
     public UserDto register(RegisterRequest req) {
         if (users.existsByEmail(req.email())) {
-            throw new IllegalArgumentException("Bu e-posta adresi zaten kullanılıyor.");
+            throw new IllegalArgumentException(getMsg("auth.email.exists"));
         }
 
         try {
@@ -70,7 +79,7 @@ public class AuthService {
             VerificationToken vt = new VerificationToken();
             vt.setUser(u);
             vt.setToken(token);
-            vt.setExpiresAt(LocalDateTime.now().plusHours(24)); // 24 saat geçerli
+            vt.setExpiresAt(LocalDateTime.now().plusHours(24));
             verifyTokens.save(vt);
 
             String link = String.format("%s/verify-email?token=%s", frontendBaseUrl, token);
@@ -78,7 +87,7 @@ public class AuthService {
 
             return toDto(u);
         }catch (DataIntegrityViolationException e){
-            throw new IllegalArgumentException("Bu e-posta adresi zaten kayıtlı.");
+            throw new IllegalArgumentException(getMsg("auth.email.exists"));
         }
     }
 
@@ -93,7 +102,7 @@ public class AuthService {
 
         if (vt.getExpiresAt().isBefore(LocalDateTime.now())) {
             verifyTokens.delete(vt);
-            throw new IllegalArgumentException("Bağlantının süresi dolmuş. Lütfen tekrar kayıt olun.");
+            throw new IllegalArgumentException(getMsg("auth.token.expired"));
         }
 
         User u = vt.getUser();
@@ -113,7 +122,7 @@ public class AuthService {
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
 
-        request.getSession(true); // session oluştur
+        request.getSession(true);
         securityContextRepository.saveContext(context, request, response);
 
         User u = users.findByEmail(req.email()).orElseThrow();
@@ -129,7 +138,7 @@ public class AuthService {
     @Transactional
     public void forgot(ForgotPasswordRequest req) {
         var u = users.findByEmail(req.email())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(getMsg("user.not.found")));
 
         String token = UUID.randomUUID().toString().replace("-", ""); // 32 char
         var prt = new PasswordResetToken();
@@ -145,7 +154,7 @@ public class AuthService {
     @Transactional
     public void reset(ResetPasswordRequest req) {
         PasswordResetToken prt = tokens.findActiveByToken(req.token())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+                .orElseThrow(() -> new IllegalArgumentException(getMsg("auth.token.invalid")));
 
         User u = prt.getUser();
         u.setPasswordHash(passwordEncoder.encode(req.newPassword()));

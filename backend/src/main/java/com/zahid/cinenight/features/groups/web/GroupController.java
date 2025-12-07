@@ -8,6 +8,8 @@ import com.zahid.cinenight.features.groups.service.GroupService.AddMemberReq;
 import com.zahid.cinenight.features.groups.service.GroupService.GroupDto;
 import com.zahid.cinenight.features.users.domain.UserRepository;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,15 +24,17 @@ public class GroupController {
     private final GroupService service;
     private final EventService eventService;
     private final UserRepository users;
+    private final MessageSource messageSource;
 
-    public GroupController(GroupService service, EventService eventService, UserRepository users) {
+    public GroupController(GroupService service, EventService eventService, UserRepository users, MessageSource messageSource) {
         this.service = service;
         this.eventService = eventService;
         this.users = users;
+        this.messageSource = messageSource;
     }
 
     private Long uid(UserDetails p) {
-        if (p == null) throw new AccessDeniedException("Giriş gerekli.");
+        if (p == null) throw new AccessDeniedException(messageSource.getMessage("auth.login.required", null, LocaleContextHolder.getLocale()));
         return users.findByEmail(p.getUsername()).orElseThrow().getId();
     }
 

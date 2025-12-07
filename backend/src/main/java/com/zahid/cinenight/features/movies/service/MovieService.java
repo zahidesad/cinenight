@@ -4,9 +4,11 @@ import com.zahid.cinenight.features.movies.domain.*;
 import com.zahid.cinenight.features.movies.dto.TmdbGenre;
 import com.zahid.cinenight.features.movies.dto.TmdbMovie;
 import com.zahid.cinenight.features.movies.dto.TmdbMoviePage;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -41,18 +43,25 @@ public class MovieService {
     private final GenreService genreService;
     private final MovieViewRepository views;
     private final MovieVoteRepository votes;
+    private final MessageSource messageSource; // EKLENDİ
 
     @Autowired
     @Lazy
     private MovieService self;
 
     public MovieService(TmdbClient tmdb, MovieRepository movies, GenreService genreService,
-                        MovieViewRepository views, MovieVoteRepository votes) {
+                        MovieViewRepository views, MovieVoteRepository votes, MessageSource messageSource) {
         this.tmdb = tmdb;
         this.movies = movies;
         this.genreService = genreService;
         this.views = views;
         this.votes = votes;
+        this.messageSource = messageSource;
+    }
+
+    // Yardımcı: Mesaj çekme
+    private String getMsg(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
 
@@ -69,7 +78,7 @@ public class MovieService {
         } catch (Exception e) {
             return movies.findByTmdbId(tmdbId)
                     .map(MovieDto::from)
-                    .orElseThrow(() -> new IllegalStateException("Movie load failed", e));
+                    .orElseThrow(() -> new IllegalStateException(getMsg("movie.load.failed"), e));
         }
     }
 
@@ -104,7 +113,7 @@ public class MovieService {
                 try { Thread.sleep(50); } catch (InterruptedException ignored) {}
             }
         }
-        throw new IllegalStateException("Movie upsert failed after retries");
+        throw new IllegalStateException(getMsg("movie.upsert.failed"));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
@@ -130,7 +139,7 @@ public class MovieService {
     }
 
     private void mapFields(Movie m, TmdbMovie t, String lang) {
-        String newTitle = t.title() != null ? t.title() : (t.name() != null ? t.name() : "Başlık Bilinmiyor");
+        String newTitle = t.title() != null ? t.title() : (t.name() != null ? t.name() : getMsg("movie.title.unknown"));
         m.setTitle(newTitle);
         m.setOriginalTitle(t.original_title());
         m.setDescription(t.overview());
@@ -174,7 +183,7 @@ public class MovieService {
     }
 
     public void rate(int tmdbId, String lang, byte rating) {
-        if (rating < 1 || rating > 10) throw new IllegalArgumentException("rating must be 1..10");
+        if (rating < 1 || rating > 10) throw new IllegalArgumentException(getMsg("movie.rating.invalid"));
         Movie m = self.upsertFromTmdb(tmdb.movieDetail(tmdbId, lang), lang);
         var vote = new MovieVote(m, rating);
         votes.save(vote);
