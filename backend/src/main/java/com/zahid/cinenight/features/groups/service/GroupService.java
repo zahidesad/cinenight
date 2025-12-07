@@ -9,16 +9,19 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class GroupService {
 
     public record CreateGroupReq(@NotBlank String name, String description, String visibility) {}
 
-    public record GroupDto(Long id, String name, String description, String visibility, String role) {
-        public static GroupDto of(Group g, String role) {
-            return new GroupDto(g.getId(), g.getName(), g.getDescription(),
-                    g.getVisibility().name(), role);
+    public record GroupDto(Long id, String name, String description, String visibility, String role, int memberCount, String inviteToken) {
+        public static GroupDto of(Group g, String role, int memberCount) {
+            return new GroupDto(
+                    g.getId(), g.getName(), g.getDescription(),
+                    g.getVisibility().name(), role, memberCount, g.getInviteToken()
+            );
         }
     }
     public record AddMemberReq(@NotNull Long groupId, @NotBlank String email, @NotNull GroupRole role) {}
@@ -38,16 +41,12 @@ public class GroupService {
         Group g = new Group();
         g.setName(req.name());
         g.setDescription(req.description());
+        g.setInviteToken(UUID.randomUUID().toString());
 
         try {
-            if (req.visibility() != null) {
-                g.setVisibility(GroupVisibility.valueOf(req.visibility()));
-            } else {
-                g.setVisibility(GroupVisibility.LINK);
-            }
-        } catch (Exception e) {
-            g.setVisibility(GroupVisibility.LINK);
-        }
+            if (req.visibility() != null) g.setVisibility(GroupVisibility.valueOf(req.visibility()));
+            else g.setVisibility(GroupVisibility.LINK);
+        } catch (Exception e) { g.setVisibility(GroupVisibility.LINK); }
 
         g.setCreatedBy(users.findById(ownerUserId).orElse(null));
         groups.save(g);
@@ -59,19 +58,16 @@ public class GroupService {
         m.setRole(GroupRole.OWNER);
         members.save(m);
 
-        return GroupDto.of(g, "OWNER");
+        return GroupDto.of(g, "OWNER", 1);
     }
 
     @Transactional
     public void join(Long groupId, Long userId) {
         Group g = groups.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
+        if (members.existsById(new GroupMemberId(groupId, userId))) return;
 
-        if (members.existsById(new GroupMemberId(groupId, userId))) {
-            return;
-        }
-
-        if (g.getVisibility() == GroupVisibility.PRIVATE) {
-            throw new IllegalArgumentException("Bu grup dışarıdan katılıma kapalı.");
+        if (g.getVisibility() != GroupVisibility.PUBLIC) {
+            throw new IllegalArgumentException("Bu gruba ID ile katılamazsınız, davet linki gerekli.");
         }
 
         GroupMember m = new GroupMember();
@@ -80,6 +76,25 @@ public class GroupService {
         m.setUser(users.findById(userId).orElseThrow());
         m.setRole(GroupRole.MEMBER);
         members.save(m);
+    }
+
+    @Transactional
+    public Long joinByToken(String token, Long userId) {
+        Group g = groups.findByInviteToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Geçersiz davet bağlantısı."));
+
+        if (members.existsById(new GroupMemberId(g.getId(), userId))) {
+            return g.getId();
+        }
+
+        GroupMember m = new GroupMember();
+        m.setId(new GroupMemberId(g.getId(), userId));
+        m.setGroup(g);
+        m.setUser(users.findById(userId).orElseThrow());
+        m.setRole(GroupRole.MEMBER);
+        members.save(m);
+
+        return g.getId();
     }
 
     @Transactional
@@ -104,14 +119,20 @@ public class GroupService {
     public List<GroupDto> myGroups(Long userId) {
         return members.findAll().stream()
                 .filter(m -> m.getUser().getId().equals(userId))
-                .map(m -> GroupDto.of(m.getGroup(), m.getRole().name()))
+                .map(m -> {
+                    int count = members.countByGroupId(m.getGroup().getId());
+                    return GroupDto.of(m.getGroup(), m.getRole().name(), count);
+                })
                 .toList();
     }
 
     public List<GroupDto> explore() {
         return groups.findTop20ByVisibilityOrderByCreatedAtDesc(GroupVisibility.PUBLIC)
                 .stream()
-                .map(g -> GroupDto.of(g, "VISITOR"))
+                .map(g -> {
+                    int count = members.countByGroupId(g.getId());
+                    return GroupDto.of(g, "VISITOR", count);
+                })
                 .toList();
     }
 }

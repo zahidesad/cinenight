@@ -94,7 +94,7 @@ export default function GroupsPage() {
 
                             <div className="mt-6 pt-4 border-t border-white/5 flex items-center text-sm text-gray-500">
                                 <User className="h-4 w-4 mr-1.5" />
-                                <span>Üye sayısı yakında...</span>
+                                <span>{group.memberCount}</span>
                             </div>
                         </div>
                     ))}

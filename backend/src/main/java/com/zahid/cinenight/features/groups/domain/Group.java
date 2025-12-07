@@ -36,4 +36,14 @@ public class Group {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "invite_token", nullable = false, length = 64)
+    private String inviteToken;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.inviteToken == null) {
+            this.inviteToken = java.util.UUID.randomUUID().toString();
+        }
+    }
 }

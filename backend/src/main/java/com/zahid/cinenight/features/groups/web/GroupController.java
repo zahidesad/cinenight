@@ -57,6 +57,13 @@ public class GroupController {
         return ApiResponse.ok(service.explore());
     }
 
+    @PostMapping("/join-token/{token}")
+    public ApiResponse<Long> joinByToken(@AuthenticationPrincipal UserDetails p,
+                                         @PathVariable String token) {
+        Long groupId = service.joinByToken(token, uid(p));
+        return ApiResponse.ok(groupId);
+    }
+
     @PostMapping("/{groupId}/join")
     public ApiResponse<String> join(@AuthenticationPrincipal UserDetails p,
                                     @PathVariable Long groupId) {

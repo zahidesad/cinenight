@@ -6,6 +6,8 @@ export type GroupDto = {
     description?: string;
     visibility: 'PRIVATE' | 'LINK' | 'PUBLIC';
     role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VISITOR';
+    memberCount: number;
+    inviteToken: string;
 };
 
 export type CreateGroupReq = {
@@ -32,4 +34,8 @@ export function addMember(groupId: number, email: string, role: 'ADMIN' | 'MEMBE
 
 export function joinGroup(groupId: number) {
     return apiPost<string>(`/groups/${groupId}/join`);
+}
+
+export function joinGroupByToken(token: string) {
+    return apiPost<number>(`/groups/join-token/${token}`);
 }

@@ -1,44 +1,42 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { joinGroup, fetchMyGroups } from '@/api/groups';
+import { joinGroupByToken } from '@/api/groups';
 import { Loader2, Users, ShieldAlert } from 'lucide-react';
 import { me } from '@/api/auth';
 
 export default function JoinGroupPage() {
-    const { groupId } = useParams();
+    const { token } = useParams();
     const navigate = useNavigate();
     const [status, setStatus] = useState<'CHECKING' | 'JOINING' | 'ERROR'>('CHECKING');
     const [errorMsg, setErrorMsg] = useState('');
 
     useEffect(() => {
         async function checkAndJoin() {
-            if (!groupId) return;
+            if (!token) return;
 
+            // 1. Login kontrol
             const userRes = await me();
             if (!userRes.ok) {
-                navigate(`/login?redirect=/join/${groupId}`);
+                // Login olduktan sonra buraya geri dönsün
+                navigate(`/login?redirect=/join/${token}`);
                 return;
             }
 
-            const groupsRes = await fetchMyGroups();
-            if (groupsRes.ok && groupsRes.data?.find(g => g.id === Number(groupId))) {
-                navigate(`/groups/${groupId}`);
-                return;
-            }
-
+            // 2. Token ile katıl
             setStatus('JOINING');
-            const joinRes = await joinGroup(Number(groupId));
+            const joinRes = await joinGroupByToken(token);
 
-            if (joinRes.ok) {
-                navigate(`/groups/${groupId}`);
+            if (joinRes.ok && joinRes.data) {
+                // Başarılıysa dönen GroupID ile detay sayfasına git
+                navigate(`/groups/${joinRes.data}`);
             } else {
                 setStatus('ERROR');
-                setErrorMsg(joinRes.error || "Gruba katılırken bir sorun oluştu.");
+                setErrorMsg(joinRes.error || "Gruba katılım başarısız veya link geçersiz.");
             }
         }
 
         checkAndJoin();
-    }, [groupId, navigate]);
+    }, [token, navigate]);
 
     if (status === 'ERROR') {
         return (
@@ -62,7 +60,7 @@ export default function JoinGroupPage() {
                     <Users className="h-8 w-8" />
                 </div>
                 <h2 className="mb-2 text-2xl font-bold text-white">Gruba Katılınıyor</h2>
-                <p className="mb-6 text-gray-400">Seni ekibe dahil ediyoruz, lütfen bekle...</p>
+                <p className="mb-6 text-gray-400">{errorMsg}</p>
                 <div className="flex justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>

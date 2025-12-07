@@ -28,6 +28,7 @@ export default function GroupDetailPage() {
     // --- Modals ---
     const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
     const [showEventModal, setShowEventModal] = useState(false);
+    const [inviteToken, setInviteToken] = useState<string | null>(null);
 
     // Verileri Yükle
     const loadData = async () => {
@@ -43,10 +44,12 @@ export default function GroupDetailPage() {
             if (pollRes.ok && pollRes.data) setPoll(pollRes.data);
             if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
 
-            // Kullanıcının bu gruptaki rolünü bul
             if (groupsRes.ok && groupsRes.data) {
                 const currentGroup = groupsRes.data.find(g => g.id === Number(groupId));
-                if (currentGroup) setRole(currentGroup.role);
+                if (currentGroup) {
+                    setRole(currentGroup.role);
+                    setInviteToken(currentGroup.inviteToken);
+                }
             }
 
         } catch (err) {
@@ -84,7 +87,8 @@ export default function GroupDetailPage() {
     };
 
     const handleCopyInvite = () => {
-        const link = `${window.location.origin}/join/${groupId}`;
+        if (!inviteToken) return;
+        const link = `${window.location.origin}/join/${inviteToken}`;
         navigator.clipboard.writeText(link);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

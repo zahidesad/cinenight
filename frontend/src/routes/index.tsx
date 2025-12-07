@@ -60,6 +60,7 @@ export default function AppRoutes() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/join/:groupId" element={<JoinGroupPage />} />
+                <Route path="/join/:token" element={<JoinGroupPage />} />
             </Route>
         </Routes>
     );
