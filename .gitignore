@@ -34,3 +34,6 @@ build/
 env/backend.local.properties
 backend/src/main/resources/application-local.yml
 HELP.md
+mvnw
+mvnw.cmd
+.gitattributes
