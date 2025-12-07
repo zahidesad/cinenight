@@ -47,4 +47,21 @@ public class EmailService {
                 """.formatted(link));
         mail.send(msg);
     }
+
+    public void sendEmailChangeVerification(String to, String link) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(from);
+        msg.setTo(to);
+        msg.setSubject("CineNight - E-posta Değişikliğini Onayla");
+        msg.setText("""
+                Merhaba,
+                
+                Hesabındaki e-posta adresini değiştirmek istediğini belirttin.
+                Yeni adresini doğrulamak için aşağıdaki bağlantıya tıkla:
+                %s
+                
+                Eğer bu işlemi sen yapmadıysan, bu e-postayı dikkate alma.
+                """.formatted(link));
+        mail.send(msg);
+    }
 }

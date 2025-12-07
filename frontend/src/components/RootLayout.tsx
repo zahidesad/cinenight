@@ -54,10 +54,16 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                     <div className="flex items-center gap-4">
                         {user ? (
                             <div className="flex items-center gap-4 pl-6 border-l border-white/10">
-                                <div className="hidden text-right sm:block">
+                                {/* Kullanıcı adı ve e-postası artık profile linki oldu */}
+                                <Link
+                                    to="/profile"
+                                    className="hidden text-right sm:block hover:opacity-80 transition cursor-pointer"
+                                    title="Profil Ayarları"
+                                >
                                     <div className="text-sm font-medium text-white leading-none">{user.displayName}</div>
                                     <div className="text-xs text-gray-500 mt-1">{user.email}</div>
-                                </div>
+                                </Link>
+
                                 <button
                                     onClick={handleLogout}
                                     className="group relative rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"

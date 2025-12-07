@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'; // useRef'i eklemeyi unutma
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyEmail } from '@/api/auth';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import {verifyEmailChange} from "@/api/user";
 
 export default function VerifyEmailPage() {
     const [params] = useSearchParams();
@@ -23,19 +24,21 @@ export default function VerifyEmailPage() {
         if (requestSent.current) return;
         requestSent.current = true;
 
-        verifyEmail(token).then(res => {
+        const type = params.get('type');
+
+        const verifyFn = type === 'email_change' ? verifyEmailChange : verifyEmail;
+
+        verifyFn(token).then(res => {
             if (res.ok) {
                 setStatus('SUCCESS');
-                // 3 saniye sonra login'e at
                 setTimeout(() => navigate('/login'), 3000);
             } else {
                 setStatus('ERROR');
                 setMsg(res.error || 'Doğrulama başarısız.');
             }
         });
-    }, [token, navigate]);
+    }, [token, navigate, params]);
 
-    // ... (return kısmı aynı kalacak)
     return (
         <div className="flex flex-col items-center justify-center text-center space-y-6 py-10">
             {status === 'LOADING' && (

@@ -16,6 +16,7 @@ import GroupsPage from '@/features/groups/GroupsPage';
 import GroupDetailPage from '@/features/groups/GroupDetailPage';
 import JoinGroupPage from '@/features/groups/JoinGroupPage';
 import ExplorePage from '@/features/groups/ExplorePage';
+import ProfilePage from "@/features/users/ProfilePage";
 
 export default function AppRoutes() {
     const [user, setUser] = useState<UserDto | null>(null);
@@ -57,6 +58,7 @@ export default function AppRoutes() {
                 {/* PROTECTED: Sadece giriş yapmış kullanıcılar */}
                 <Route element={<ProtectedRoute user={user} />}>
                     <Route path="/dashboard" element={<GroupsPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/groups/:groupId" element={<GroupDetailPage />} />
                     <Route path="/join/:token" element={<JoinGroupPage />} />
                 </Route>
