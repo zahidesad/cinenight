@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
 import { fetchGroupEvents, rsvpEvent, type EventDto } from '@/api/events';
-import { fetchMyGroups } from '@/api/groups';
-import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock } from 'lucide-react';
+import { fetchMyGroups, deleteGroup } from '@/api/groups';
+import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock, Settings, Trash2 } from 'lucide-react';
 import MovieDetailModal from '@/components/MovieDetailModal';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import CreateEventModal from './components/CreateEventModal';
+import MembersModal from './components/MembersModal';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const IMG = "https://image.tmdb.org/t/p";
 
 export default function GroupDetailPage() {
     const { groupId } = useParams();
+    const navigate = useNavigate();
 
     // --- State ---
     const [poll, setPoll] = useState<PollDetailDto | null>(null);
@@ -28,6 +31,9 @@ export default function GroupDetailPage() {
     // --- Modals ---
     const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
     const [showEventModal, setShowEventModal] = useState(false);
+    const [showMembersModal, setShowMembersModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // EKLENDİ
+    const [deleteLoading, setDeleteLoading] = useState(false); // EKLENDİ
     const [inviteToken, setInviteToken] = useState<string | null>(null);
 
     // Verileri Yükle
@@ -44,6 +50,7 @@ export default function GroupDetailPage() {
             if (pollRes.ok && pollRes.data) setPoll(pollRes.data);
             if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
 
+            // Kullanıcının bu gruptaki rolünü bul
             if (groupsRes.ok && groupsRes.data) {
                 const currentGroup = groupsRes.data.find(g => g.id === Number(groupId));
                 if (currentGroup) {
@@ -84,6 +91,22 @@ export default function GroupDetailPage() {
         const eventsRes = await fetchGroupEvents(Number(groupId));
         if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
         setRsvpLoading(null);
+    };
+
+    const confirmDeleteGroup = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const executeDeleteGroup = async () => {
+        setDeleteLoading(true);
+        const res = await deleteGroup(Number(groupId));
+        if (res.ok) {
+            navigate('/dashboard');
+        } else {
+            setDeleteLoading(false);
+            setShowDeleteConfirm(false);
+            alert(res.error || "Grup silinemedi.");
+        }
     };
 
     const handleCopyInvite = () => {
@@ -127,13 +150,33 @@ export default function GroupDetailPage() {
                     </div>
                 </div>
 
-                <button
-                    onClick={handleCopyInvite}
-                    className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-sm font-semibold border border-indigo-500/20 hover:border-indigo-500 shadow-lg shadow-indigo-500/5"
-                >
-                    {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />}
-                    {copied ? "Link Kopyalandı" : "Arkadaşlarını Davet Et"}
-                </button>
+                <div className="flex gap-2">
+                    {role === 'OWNER' && (
+                        <button
+                            onClick={confirmDeleteGroup}
+                            className="p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition border border-red-500/20"
+                            title="Grubu Sil"
+                        >
+                            <Trash2 className="h-5 w-5" />
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => setShowMembersModal(true)}
+                        className="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition border border-white/10"
+                        title="Üyeler"
+                    >
+                        <Settings className="h-5 w-5" />
+                    </button>
+
+                    <button
+                        onClick={handleCopyInvite}
+                        className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-sm font-semibold border border-indigo-500/20 hover:border-indigo-500 shadow-lg shadow-indigo-500/5"
+                    >
+                        {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />}
+                        {copied ? "Link Kopyalandı" : "Arkadaşlarını Davet Et"}
+                    </button>
+                </div>
             </div>
 
             {/* --- BÖLÜM 1: ETKİNLİKLER --- */}
@@ -392,13 +435,34 @@ export default function GroupDetailPage() {
                 <CreateEventModal
                     groupId={Number(groupId)}
                     pollId={poll.id}
-                    movies={winners}
+                    movies={winners} // Kazananların listesini gönderiyoruz (Beraberlik için)
                     onClose={() => setShowEventModal(false)}
                     onSuccess={() => {
-                        loadData();
+                        loadData(); // Sayfayı yenile
+                        setPoll(prev => prev ? { ...prev, isOpen: false } : null); // UI'dan Planla butonunu anında kaldır
                     }}
                 />
             )}
+
+            {showMembersModal && (
+                <MembersModal
+                    groupId={Number(groupId)}
+                    isOwner={role === 'OWNER'}
+                    onClose={() => setShowMembersModal(false)}
+                />
+            )}
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={executeDeleteGroup}
+                title="Grubu Sil"
+                description="Bu grubu ve içindeki tüm etkinlik, anket ve geçmiş verileri kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz."
+                confirmText="Evet, Grubu Sil"
+                cancelText="Vazgeç"
+                variant="danger"
+                loading={deleteLoading}
+            />
         </div>
     );
 }

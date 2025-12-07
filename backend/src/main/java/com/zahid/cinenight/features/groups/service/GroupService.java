@@ -25,6 +25,7 @@ public class GroupService {
         }
     }
     public record AddMemberReq(@NotNull Long groupId, @NotBlank String email, @NotNull GroupRole role) {}
+    public record GroupMemberDto(Long userId, String displayName, String avatarUrl, String role, String joinedAt) {}
 
     private final GroupRepository groups;
     private final GroupMemberRepository members;
@@ -123,5 +124,58 @@ public class GroupService {
                     return GroupDto.of(g, "VISITOR", count);
                 })
                 .toList();
+    }
+
+    public List<GroupMemberDto> getMembers(Long groupId, Long currentUserId) {
+        ensureMember(groupId, currentUserId);
+
+        return members.findAll().stream()
+                .filter(m -> m.getGroup().getId().equals(groupId))
+                .map(m -> new GroupMemberDto(
+                        m.getUser().getId(),
+                        m.getUser().getDisplayName(),
+                        m.getUser().getAvatarUrl(),
+                        m.getRole().name(),
+                        m.getJoinedAt().toString()
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public void removeMember(Long groupId, Long targetUserId, Long currentUserId) {
+        Group g = groups.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
+
+        GroupMember actor = members.findById(new GroupMemberId(groupId, currentUserId))
+                .orElseThrow(() -> new IllegalArgumentException("Yetkiniz yok."));
+
+        if (actor.getRole() != GroupRole.OWNER) {
+            throw new IllegalArgumentException("Sadece grup yöneticisi üye çıkarabilir.");
+        }
+
+        if (targetUserId.equals(currentUserId)) {
+            throw new IllegalArgumentException("Kendinizi gruptan atamazsınız.");
+        }
+
+        GroupMember target = members.findById(new GroupMemberId(groupId, targetUserId))
+                .orElseThrow(() -> new IllegalArgumentException("Kullanıcı grupta değil."));
+
+        members.delete(target);
+    }
+
+    @Transactional
+    public void deleteGroup(Long groupId, Long currentUserId) {
+        Group g = groups.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Grup bulunamadı."));
+
+        if (!g.getCreatedBy().getId().equals(currentUserId)) {
+            throw new IllegalArgumentException("Bu grubu silmeye yetkiniz yok.");
+        }
+
+        groups.delete(g);
+    }
+
+    private void ensureMember(Long groupId, Long userId) {
+        if (!members.existsById(new GroupMemberId(groupId, userId))) {
+            throw new IllegalArgumentException("Bu grubun üyesi değilsiniz.");
+        }
     }
 }

@@ -76,4 +76,25 @@ public class GroupController {
                                                                    @PathVariable Long groupId) {
         return ApiResponse.ok(eventService.listByGroup(groupId, uid(p)));
     }
+
+    @GetMapping("/{groupId}/members")
+    public ApiResponse<List<GroupService.GroupMemberDto>> getMembers(@AuthenticationPrincipal UserDetails p,
+                                                                     @PathVariable Long groupId) {
+        return ApiResponse.ok(service.getMembers(groupId, uid(p)));
+    }
+
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ApiResponse<String> removeMember(@AuthenticationPrincipal UserDetails p,
+                                            @PathVariable Long groupId,
+                                            @PathVariable Long userId) {
+        service.removeMember(groupId, userId, uid(p));
+        return ApiResponse.ok("removed");
+    }
+
+    @DeleteMapping("/{groupId}")
+    public ApiResponse<String> deleteGroup(@AuthenticationPrincipal UserDetails p,
+                                           @PathVariable Long groupId) {
+        service.deleteGroup(groupId, uid(p));
+        return ApiResponse.ok("deleted");
+    }
 }

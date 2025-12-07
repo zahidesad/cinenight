@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './client';
+import {apiDelete, apiGet, apiPost} from './client';
 
 export type GroupDto = {
     id: number;
@@ -14,6 +14,14 @@ export type CreateGroupReq = {
     name: string;
     description?: string;
     visibility: 'PRIVATE' | 'LINK' | 'PUBLIC';
+};
+
+export type GroupMemberDto = {
+    userId: number;
+    displayName: string;
+    avatarUrl?: string;
+    role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    joinedAt: string;
 };
 
 export function fetchMyGroups() {
@@ -38,4 +46,16 @@ export function joinGroup(groupId: number) {
 
 export function joinGroupByToken(token: string) {
     return apiPost<number>(`/groups/join-token/${token}`);
+}
+
+export function fetchGroupMembers(groupId: number) {
+    return apiGet<GroupMemberDto[]>(`/groups/${groupId}/members`);
+}
+
+export function removeMember(groupId: number, userId: number) {
+    return apiDelete<string>(`/groups/${groupId}/members/${userId}`);
+}
+
+export function deleteGroup(groupId: number) {
+    return apiDelete<string>(`/groups/${groupId}`);
 }
