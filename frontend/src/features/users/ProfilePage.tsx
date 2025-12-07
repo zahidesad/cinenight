@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { me, type UserDto } from '@/api/auth';
 import { User, Mail, Save, Loader2, AlertTriangle, CheckCircle, Lock, Key } from 'lucide-react';
-import {changePassword, updateProfile} from "@/api/user";
+import { changePassword, updateProfile } from "@/api/user";
+import { useTranslation } from 'react-i18next';
 
 export default function ProfilePage() {
+    const { t } = useTranslation();
+
     // --- Profil State ---
     const [user, setUser] = useState<UserDto | null>(null);
     const [name, setName] = useState('');
@@ -41,13 +44,13 @@ export default function ProfilePage() {
 
         if (res.ok) {
             if (email !== user?.email) {
-                setProfileMsg({ type: 'info', text: 'Profil güncellendi. E-posta değişikliği için doğrulama linki gönderildi.' });
+                setProfileMsg({ type: 'info', text: t('profile.msg_profile_updated_email') });
             } else {
-                setProfileMsg({ type: 'success', text: 'Profil başarıyla güncellendi.' });
+                setProfileMsg({ type: 'success', text: t('profile.msg_profile_updated') });
                 setUser(res.data);
             }
         } else {
-            setProfileMsg({ type: 'error', text: res.error || 'Güncelleme başarısız.' });
+            setProfileMsg({ type: 'error', text: res.error || t('profile.msg_profile_failed') });
         }
     };
 
@@ -57,11 +60,11 @@ export default function ProfilePage() {
         setPwMsg(null);
 
         if (newPw.length < 6) {
-            setPwMsg({ type: 'error', text: 'Yeni şifre en az 6 karakter olmalı.' });
+            setPwMsg({ type: 'error', text: t('profile.msg_password_min') });
             return;
         }
         if (newPw !== confirmPw) {
-            setPwMsg({ type: 'error', text: 'Yeni şifreler eşleşmiyor.' });
+            setPwMsg({ type: 'error', text: t('profile.msg_password_mismatch') });
             return;
         }
 
@@ -70,12 +73,12 @@ export default function ProfilePage() {
         setSavingPw(false);
 
         if (res.ok) {
-            setPwMsg({ type: 'success', text: 'Şifreniz başarıyla değiştirildi.' });
+            setPwMsg({ type: 'success', text: t('profile.msg_password_updated') });
             setCurrentPw('');
             setNewPw('');
             setConfirmPw('');
         } else {
-            setPwMsg({ type: 'error', text: res.error || 'Şifre değiştirilemedi.' });
+            setPwMsg({ type: 'error', text: res.error || t('profile.msg_password_failed') });
         }
     };
 
@@ -83,17 +86,17 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-xl mx-auto py-10 px-4 space-y-8">
-            <h1 className="text-3xl font-bold text-white">Hesap Ayarları</h1>
+            <h1 className="text-3xl font-bold text-white">{t('profile.title')}</h1>
 
             {/* --- BÖLÜM 1: GENEL BİLGİLER --- */}
             <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                    <User className="w-5 h-5 text-indigo-400" /> Profil Bilgileri
+                    <User className="w-5 h-5 text-indigo-400" /> {t('profile.section_profile')}
                 </h2>
 
                 <form onSubmit={handleProfileSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Görünen Ad</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">{t('auth.fields.display_name')}</label>
                         <div className="flex items-center bg-gray-800 rounded-lg px-3 border border-gray-700 focus-within:border-indigo-500 transition-colors">
                             <User className="w-4 h-4 text-gray-500 mr-2" />
                             <input
@@ -107,7 +110,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">E-posta Adresi</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">{t('auth.fields.email')}</label>
                         <div className="flex items-center bg-gray-800 rounded-lg px-3 border border-gray-700 focus-within:border-indigo-500 transition-colors">
                             <Mail className="w-4 h-4 text-gray-500 mr-2" />
                             <input
@@ -121,7 +124,7 @@ export default function ProfilePage() {
                         {email !== user?.email && (
                             <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
                                 <AlertTriangle className="w-3 h-3" />
-                                E-posta değiştirildiğinde yeniden doğrulama gerekir.
+                                {t('profile.email_warning')}
                             </p>
                         )}
                     </div>
@@ -145,7 +148,7 @@ export default function ProfilePage() {
                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             {savingProfile ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                            Bilgileri Kaydet
+                            {t('profile.save_button')}
                         </button>
                     </div>
                 </form>
@@ -154,12 +157,12 @@ export default function ProfilePage() {
             {/* --- BÖLÜM 2: PAROLA DEĞİŞTİRME --- */}
             <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-indigo-400" /> Şifre Değiştir
+                    <Lock className="w-5 h-5 text-indigo-400" /> {t('profile.section_password')}
                 </h2>
 
                 <form onSubmit={handlePasswordSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Mevcut Şifre</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">{t('profile.current_password')}</label>
                         <div className="flex items-center bg-gray-800 rounded-lg px-3 border border-gray-700 focus-within:border-indigo-500">
                             <Key className="w-4 h-4 text-gray-500 mr-2" />
                             <input
@@ -167,7 +170,7 @@ export default function ProfilePage() {
                                 value={currentPw}
                                 onChange={e => setCurrentPw(e.target.value)}
                                 className="bg-transparent border-none w-full py-3 text-white focus:outline-none placeholder-gray-600"
-                                placeholder="••••••••"
+                                placeholder={t('auth.fields.password_placeholder')}
                                 required
                             />
                         </div>
@@ -175,7 +178,7 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Yeni Şifre</label>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">{t('auth.fields.new_password')}</label>
                             <div className="flex items-center bg-gray-800 rounded-lg px-3 border border-gray-700 focus-within:border-indigo-500">
                                 <Lock className="w-4 h-4 text-gray-500 mr-2" />
                                 <input
@@ -183,14 +186,14 @@ export default function ProfilePage() {
                                     value={newPw}
                                     onChange={e => setNewPw(e.target.value)}
                                     className="bg-transparent border-none w-full py-3 text-white focus:outline-none placeholder-gray-600"
-                                    placeholder="En az 6 karakter"
+                                    placeholder={t('profile.placeholder_min_char')}
                                     required
                                     minLength={6}
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Yeni Şifre (Tekrar)</label>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">{t('profile.new_password_confirm')}</label>
                             <div className="flex items-center bg-gray-800 rounded-lg px-3 border border-gray-700 focus-within:border-indigo-500">
                                 <Lock className="w-4 h-4 text-gray-500 mr-2" />
                                 <input
@@ -198,7 +201,7 @@ export default function ProfilePage() {
                                     value={confirmPw}
                                     onChange={e => setConfirmPw(e.target.value)}
                                     className="bg-transparent border-none w-full py-3 text-white focus:outline-none placeholder-gray-600"
-                                    placeholder="••••••••"
+                                    placeholder={t('auth.fields.password_placeholder')}
                                     required
                                 />
                             </div>
@@ -221,7 +224,7 @@ export default function ProfilePage() {
                             className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-white/10 font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             {savingPw ? <Loader2 className="animate-spin w-5 h-5" /> : <Key className="w-5 h-5" />}
-                            Şifreyi Güncelle
+                            {t('profile.update_password_button')}
                         </button>
                     </div>
                 </form>

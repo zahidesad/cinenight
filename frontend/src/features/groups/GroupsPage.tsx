@@ -3,12 +3,14 @@ import { fetchMyGroups, type GroupDto } from '@/api/groups';
 import { Plus, Users, Shield, User } from 'lucide-react';
 import CreateGroupModal from './components/CreateGroupModal';
 import {useNavigate} from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 export default function GroupsPage() {
     const navigate = useNavigate();
     const [groups, setGroups] = useState<GroupDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const { t } = useTranslation();
 
     const loadGroups = async () => {
         setLoading(true);
@@ -28,15 +30,15 @@ export default function GroupsPage() {
             {/* Üst Başlık ve Buton */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Gruplarım</h1>
-                    <p className="text-gray-400 mt-1">Film gecelerini planladığın topluluklar.</p>
+                    <h1 className="text-3xl font-bold text-white">{t('groups.my_groups.title')}</h1>
+                    <p className="text-gray-400 mt-1">{t('groups.my_groups.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-700 shadow-lg shadow-indigo-500/20"
                 >
                     <Plus className="h-5 w-5" />
-                    Yeni Grup Oluştur
+                    {t('groups.my_groups.create_button')}
                 </button>
             </div>
 
@@ -55,15 +57,15 @@ export default function GroupsPage() {
                     <div className="rounded-full bg-gray-800 p-4 mb-4">
                         <Users className="h-8 w-8 text-gray-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white">Henüz bir grubun yok</h3>
+                    <h3 className="text-xl font-semibold text-white">{t('groups.my_groups.empty_title')}</h3>
                     <p className="mt-2 text-gray-400 max-w-md">
-                        Arkadaşlarınla film seçmek ve etkinlik planlamak için ilk grubunu oluştur.
+                        {t('groups.my_groups.empty_desc')}
                     </p>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="mt-6 text-indigo-400 hover:text-indigo-300 font-medium underline underline-offset-4"
                     >
-                        Hemen bir tane kur
+                        {t('groups.my_groups.create_link')}
                     </button>
                 </div>
             )}
@@ -83,18 +85,18 @@ export default function GroupsPage() {
                                         {group.role === 'OWNER' ? <Shield className="h-6 w-6" /> : <Users className="h-6 w-6" />}
                                     </div>
                                     <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
-                                        {group.role}
-                                    </span>
+                                    {group.role === 'OWNER' ? t('groups.roles.owner') : t('groups.roles.member')}
+                                </span>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">{group.name}</h3>
                                 <p className="text-sm text-gray-400 line-clamp-2 min-h-[2.5rem]">
-                                    {group.description || 'Açıklama yok.'}
+                                    {group.description || t('groups.common.no_description')}
                                 </p>
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-white/5 flex items-center text-sm text-gray-500">
                                 <User className="h-4 w-4 mr-1.5" />
-                                <span>{group.memberCount}</span>
+                                <span>{t('groups.my_groups.member_count', { count: group.memberCount })}</span>
                             </div>
                         </div>
                     ))}

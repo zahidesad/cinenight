@@ -27,7 +27,7 @@ export default function HomePage() {
                 searchErr={h.searchErr}
                 searchResults={h.searchResults}
                 onRetrySearch={() => h.setQ(h.q)}
-                onMovieClick={handleMovieClick} // EKLENDİ
+                onMovieClick={handleMovieClick}
             />
 
             <section id="tabs" className="space-y-4">
@@ -54,7 +54,7 @@ export default function HomePage() {
                         loading={h.loadingKey === "trending"}
                         error={h.errKey === "trending"}
                         onRetry={() => h.loadTrending(false, 1)}
-                        onMovieClick={handleMovieClick} // EKLENDİ
+                        onMovieClick={handleMovieClick}
                     />
                 )}
                 {h.active === "toprated" && (
@@ -64,7 +64,7 @@ export default function HomePage() {
                         loading={h.loadingKey === "toprated"}
                         error={h.errKey === "toprated"}
                         onRetry={() => h.loadTopRated(false, 1)}
-                        onMovieClick={handleMovieClick} // EKLENDİ
+                        onMovieClick={handleMovieClick}
                     />
                 )}
                 {h.active === "cinenight" && (
@@ -74,13 +74,12 @@ export default function HomePage() {
                         loading={h.loadingKey === "cinenight"}
                         error={h.errKey === "cinenight"}
                         onRetry={() => h.loadTopCine(h.limitTop)}
-                        emptyText="Henüz etkileşim toplayan film yok. Bir iki oy/izlenme ile burası dolacak."
-                        onMovieClick={handleMovieClick} // EKLENDİ
+                        emptyText="Henüz etkileşim toplayan film yok. Bir iki oy/izlenme ile burası dolacak." // Bu metin MoviesGrid içinde t() ile halledilecek
+                        onMovieClick={handleMovieClick}
                     />
                 )}
             </section>
 
-            {/* EKLENDİ: Modal'ı koşullu olarak render et */}
             {selectedMovieId && (
                 <MovieDetailModal
                     tmdbId={selectedMovieId}

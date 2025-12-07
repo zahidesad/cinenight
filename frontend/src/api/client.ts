@@ -9,18 +9,17 @@ const RAW_BASE =
         ? ((import.meta as any).env.VITE_API_BASE as string)
         : "/api/v1";
 
-const API_BASE = (RAW_BASE || "/api/v1").replace(/\/+$/, ""); // sondaki /'ları sil
+const API_BASE = (RAW_BASE || "/api/v1").replace(/\/+$/, "");
 
 function isAbsolute(url: string) {
     return /^https?:\/\//i.test(url);
 }
 
-/** /api/v1 ekini iki kez eklemeyi önler */
 export function joinApiPath(path: string): string {
     if (!path) return API_BASE;
     if (isAbsolute(path)) return path;
     const normalized = path.startsWith("/") ? path : `/${path}`;
-    if (normalized.startsWith(API_BASE)) return normalized; // zaten /api/v1 ile başlıyorsa dokunma
+    if (normalized.startsWith(API_BASE)) return normalized;
     return `${API_BASE}${normalized}`;
 }
 
@@ -34,7 +33,6 @@ async function parseJsonSafe<T>(res: Response): Promise<T | null> {
     }
 }
 
-/** Backend ya {data: ...} ya da ham JSON dönebilir; ikisini de destekle. */
 function extractData<T>(body: any): T | null {
     if (body == null) return null;
     if (Object.prototype.hasOwnProperty.call(body, "data"))
@@ -50,12 +48,14 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
     const url = joinApiPath(path);
 
+    const currentLang = i18n.language || "tr";
+
     const res = await fetch(url, {
         method,
         credentials: "include",
         headers: {
             Accept: "application/json",
-            "Accept-Language": i18n.language || "tr",
+            "Accept-Language": currentLang,
             ...(body != null ? { "Content-Type": "application/json" } : {}),
             ...(init?.headers ?? {}),
         },
@@ -70,9 +70,11 @@ async function request<T>(
         null;
 
     if (res.ok && data != null) return { ok: true, data, error: null };
+
     if (res.ok && data == null)
-        return { ok: false, data: null, error: "Beklenmeyen yanıt biçimi (data yok)." };
-    return { ok: false, data: null, error: errorMsg ?? "İstek başarısız." };
+        return { ok: false, data: null, error: i18n.t('errors.unexpected_response') };
+
+    return { ok: false, data: null, error: errorMsg ?? i18n.t('errors.request_failed') };
 }
 
 export const apiGet = <T>(path: string, init?: RequestInit) =>
@@ -86,8 +88,7 @@ export const apiPatch = <T>(path: string, body?: unknown, init?: RequestInit) =>
 export const apiDelete = <T>(path: string, init?: RequestInit) =>
     request<T>("DELETE", path, undefined, init);
 
-/** Üst katmanda null kontrolüyle uğraşmamak için */
 export function unwrap<T>(resp: ApiResponse<T>): T {
     if (resp.ok) return resp.data;
-    throw new Error(resp.error || "İstek başarısız.");
+    throw new Error(resp.error || i18n.t('errors.request_failed'));
 }

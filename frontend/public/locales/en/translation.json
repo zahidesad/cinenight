@@ -1,9 +1,281 @@
 {
-  "welcome": "Welcome",
-  "login": "Login",
-  "register": "Register",
-  "email": "Email",
-  "password": "Password",
-  "search_placeholder": "Search movies... (e.g. Inception)",
-  "error_generic": "An error occurred"
+  "meta": {
+    "title": "CineNight",
+    "description": "Suggest movies with friends, vote, plan events based on the winner."
+  },
+  "nav": {
+    "myGroups": "My Groups",
+    "explore": "Explore",
+    "liveDemo": "Live Demo",
+    "profileSettings": "Profile Settings"
+  },
+  "footer": {
+    "tagline": "Movie Night Planner",
+    "systemInfo": "System Info (SSR)"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "pages": {
+      "login": {
+        "title": "Login",
+        "subtitle": "Continue your movie nights where you left off.",
+        "submit": "Login",
+        "forgot_password": "Forgot Password?",
+        "create_account": "Create Account",
+        "error_generic": "Login failed.",
+        "error_inactive": "Account not active yet. Please click the verification link sent to your email."
+      },
+      "register": {
+        "title": "Create Account",
+        "subtitle": "Deciding what to watch together is now easy.",
+        "submit": "Sign Up",
+        "success_title": "Registration Received!",
+        "success_message": "We sent a verification link to <bold>{{email}}</bold> to activate your account. Please check your inbox.",
+        "error_generic": "Registration failed.",
+        "already_have_account": "Already have an account?",
+        "login_link": "Login",
+        "back_to_login": "Back to Login Page"
+      },
+      "forgot_password": {
+        "title": "Forgot your password?",
+        "subtitle": "Enter your email address and we'll send you a reset link.",
+        "submit": "Send Link",
+        "success": "Reset link sent to your email.",
+        "back_to_login": "Back to login screen"
+      },
+      "reset_password": {
+        "title": "Create New Password",
+        "subtitle": "Set a strong password and login immediately.",
+        "submit": "Update Password",
+        "success": "Password updated successfully. Redirecting to login screen...",
+        "error_token": "This link appears to be invalid or expired.",
+        "error_missing_token": "Invalid or missing token. Please request a new password reset link.",
+        "error_generic": "Password reset failed.",
+        "new_link": "Request new link",
+        "submitting": "Updating..."
+      },
+      "verify_email": {
+        "loading": "Verifying account...",
+        "success_title": "Success!",
+        "success_desc": "Your email address has been verified. Redirecting to login screen...",
+        "error_title": "Error",
+        "invalid_link": "Invalid link.",
+        "failed": "Verification failed.",
+        "login_button": "Login"
+      }
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "display_name": "Display Name",
+      "new_password": "New Password",
+      "display_name_placeholder": "Ex: John",
+      "email_placeholder": "example@mail.com",
+      "password_placeholder": "••••••••",
+      "password_hint": "At least 6 characters recommended."
+    },
+    "validation": {
+      "password_min": "Password must be at least 6 characters."
+    },
+    "aria": {
+      "show_password": "Show password",
+      "hide_password": "Hide password"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "What are we watching tonight?",
+      "subtitle": "Suggest movies with friends, vote, and plan the watch night based on the winner.",
+      "search_label": "Quick search",
+      "search_placeholder": "Search movie… (ex. Inception)",
+      "featured_movie": "Featured movie"
+    },
+    "tabs": {
+      "trending": "Trending",
+      "top_rated": "Top Rated",
+      "top_cinenight": "Top CineNight"
+    },
+    "demo": {
+      "title": "Live Demo Mode",
+      "description": "You are viewing a simulation of the app. You can vote and change RSVP status by clicking the buttons below. Data is stored temporarily in your browser only.",
+      "register_button": "Create Account & Start",
+      "upcoming_events": "Upcoming Events",
+      "poll_status": "Voting In Progress",
+      "poll_title": "What Should We Watch This Weekend?",
+      "today": "TODAY",
+      "details": "Details",
+      "winner_label": "Winning Movie",
+      "plus_coming": "+3 coming"
+    }
+  },
+  "groups": {
+    "explore": {
+      "title": "Explore Communities",
+      "subtitle": "Meet new people, join groups matching your movie taste, and watch together.",
+      "no_groups": "No public groups yet.",
+      "join_button": "Join Group"
+    },
+    "my_groups": {
+      "title": "My Groups",
+      "subtitle": "Communities where you plan movie nights.",
+      "create_button": "Create New Group",
+      "empty_title": "You have no groups yet",
+      "empty_desc": "Create your first group to pick movies and plan events with friends.",
+      "create_link": "Create one now",
+      "member_count": "{{count}} members",
+      "group_description": "A group created for movie nights."
+    },
+    "detail": {
+      "title": "Group Detail",
+      "subtitle": "Events and Polls",
+      "scheduled_events": "Scheduled Events",
+      "invite_button": "Invite Friends",
+      "invite_copied": "Link Copied",
+      "coming_badge": "GOING",
+      "not_coming_badge": "NOT GOING",
+      "btn_coming": "Going",
+      "btn_not_coming": "Not Going",
+      "coming_count": "coming",
+      "empty_state_title": "Nothing Active Yet",
+      "empty_state_desc": "It's quiet here for now. Gather your friends and plan a movie night.",
+      "suggest_start": "Suggest Movie & Start"
+    },
+    "poll": {
+      "status_open": "Voting Open",
+      "status_closed": "Voting Closed",
+      "tie_title": "CRITICAL: IT'S A TIE!",
+      "leader_title": "CURRENT LEADER",
+      "tie_count": "{{count}} Movies at Top",
+      "vote_count": "with {{count}} votes",
+      "resolve_tie": "Resolve Tie & Plan",
+      "end_and_plan": "End Poll & Plan",
+      "voted": "Voted",
+      "vote": "Vote"
+    },
+    "join": {
+      "loading_title": "Joining Group...",
+      "loading_desc": "We are adding you to the team, please wait.",
+      "success_title": "Welcome Aboard!",
+      "success_desc": "You successfully joined the group.",
+      "redirecting": "Redirecting to group page...",
+      "error_title": "Join Failed",
+      "error_invalid_link": "Link invalid or expired.",
+      "error_invalid_desc": "This invitation link is no longer valid. You can request a new link from the group owner."
+    },
+    "roles": {
+      "owner": "Admin",
+      "member": "Member"
+    },
+    "common": {
+      "no_description": "No description.",
+      "optional": "(Optional)"
+    }
+  },
+  "movie": {
+    "no_title": "No Title",
+    "no_description": "No description available.",
+    "loading_details": "Loading movie details...",
+    "details_error": "Could not load movie details."
+  },
+  "modals": {
+    "movie_detail": {
+      "suggest_button": "Suggest to Group / Add to Poll",
+      "select_group_title": "Add to which group?",
+      "select_group_desc": "This movie will be added to the active poll of the selected group.",
+      "no_groups": "You have no groups yet.",
+      "no_groups_hint": "Create a group from the \"My Groups\" page first.",
+      "success_title": "Added!",
+      "success_desc": "Movie successfully added to the poll.",
+      "exists_title": "Already Listed",
+      "exists_desc": "This movie is already in the poll list."
+    },
+    "create_event": {
+      "title": "Plan Event",
+      "tie_text": "It's a tie! Which movie do you choose?",
+      "winner_label": "Winning Movie",
+      "time": "Time",
+      "location": "Location/Platform",
+      "submit": "Confirm & End Poll"
+    },
+    "create_group": {
+      "title": "Create New Group",
+      "name_label": "Group Name",
+      "name_placeholder": "Ex: Matrix Marathon",
+      "desc_label": "Description",
+      "desc_placeholder": "What is this group about? Ex: We only watch horror movies...",
+      "privacy_label": "Privacy",
+      "public": "Public",
+      "public_hint": "Visible in Explore",
+      "link": "Link Only",
+      "link_hint": "Invite only",
+      "submit": "Create Group"
+    },
+    "members": {
+      "title": "Group Members",
+      "kick_tooltip": "Kick from group",
+      "total_count": "Total {{count}} members",
+      "confirm_kick_title": "Remove Member",
+      "confirm_kick_desc": "Are you sure you want to remove this user? They will need an invite link to rejoin.",
+      "btn_kick": "Yes, Remove"
+    },
+    "delete_group": {
+      "title": "Delete Group",
+      "desc": "Are you sure you want to permanently delete this group and all its events, polls, and history? This action cannot be undone.",
+      "confirm": "Yes, Delete Group"
+    },
+    "leave_group": {
+      "title": "Leave Group",
+      "desc": "Are you sure you want to leave this group? You will need an invite link to join again.",
+      "confirm": "Yes, Leave"
+    }
+  },
+  "profile": {
+    "title": "Account Settings",
+    "section_profile": "Profile Info",
+    "section_password": "Change Password",
+    "email_warning": "Re-verification is required if email changes.",
+    "save_button": "Save Info",
+    "update_password_button": "Update Password",
+    "current_password": "Current Password",
+    "new_password_confirm": "New Password (Confirm)",
+    "placeholder_min_char": "At least 6 chars",
+    "msg_profile_updated_email": "Profile updated. Verification link sent for email change.",
+    "msg_profile_updated": "Profile updated successfully.",
+    "msg_profile_failed": "Update failed.",
+    "msg_password_min": "New password must be at least 6 characters.",
+    "msg_password_mismatch": "New passwords do not match.",
+    "msg_password_updated": "Password updated successfully.",
+    "msg_password_failed": "Failed to update password."
+  },
+  "errors": {
+    "unexpected_response": "Unexpected response format (no data).",
+    "request_failed": "Request failed.",
+    "groups_load_failed": "Failed to load groups",
+    "action_failed": "Action failed.",
+    "unexpected": "An unexpected error occurred.",
+    "operation_failed": "Operation failed.",
+    "join_failed": "Could not join.",
+    "event_create_failed": "Could not create event.",
+    "group_delete_failed": "Group could not be deleted.",
+    "group_leave_failed": "Could not leave group.",
+    "generic": "Something went wrong. Can you try again?",
+    "search_failed": "Search failed.",
+    "search_error": "An error occurred while searching."
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "back": "Go Back",
+    "error": "Error",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "load_more": "Load More",
+    "no_more_pages": "No more pages",
+    "searching": "Searching…",
+    "no_results": "No results found.",
+    "no_items": "No items found.",
+    "loading": "Loading..."
+  }
 }

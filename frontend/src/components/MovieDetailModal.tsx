@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { X, Loader2, AlertCircle, Users, Check, ChevronRight, Info } from "lucide-react"; // Info ikonu eklendi
+import { X, Loader2, AlertCircle, Users, Check, ChevronRight, Info } from "lucide-react";
 import { MoviesApi, type MovieDto } from "@/api/movies";
 import { fetchMyGroups, type GroupDto } from "@/api/groups";
 import { suggestMovie } from "@/api/polls";
+import { useTranslation } from "react-i18next";
 
 const IMG_BASE = "https://image.tmdb.org/t/p";
 
@@ -11,10 +12,10 @@ type Props = {
     onClose: () => void;
 };
 
-// UI Durumları güncellendi
 type Mode = 'DETAIL' | 'SELECT_GROUP' | 'SUCCESS' | 'EXISTS';
 
 export default function MovieDetailModal({ tmdbId, onClose }: Props) {
+    const { t } = useTranslation();
     const [mode, setMode] = useState<Mode>('DETAIL');
 
     // Veriler
@@ -35,12 +36,12 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
             if (res.ok) {
                 setMovie(res.data);
             } else {
-                setError(res.error || "Film detayları yüklenemedi.");
+                setError(res.error || t('movie.details_error'));
             }
             setLoading(false);
         }
         fetchDetails();
-    }, [tmdbId]);
+    }, [tmdbId, t]);
 
     // 2. Grupları Yükle
     const handleStartSuggest = async () => {
@@ -52,7 +53,7 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
             setGroups(res.data);
             setMode('SELECT_GROUP');
         } else {
-            alert("Gruplar yüklenemedi");
+            alert(t('errors.groups_load_failed'));
         }
     };
 
@@ -66,17 +67,15 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
         setActionLoading(false);
 
         if (res.ok) {
-            // Backend'den gelen cevaba göre durum değiştir
             if (res.data === 'exists') {
                 setMode('EXISTS');
             } else {
                 setMode('SUCCESS');
             }
 
-            // 1.5 saniye sonra kapat
             setTimeout(() => onClose(), 1500);
         } else {
-            alert(res.error || "İşlem başarısız.");
+            alert(res.error || t('errors.action_failed'));
         }
     };
 
@@ -101,7 +100,7 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                 {loading && (
                     <div className="flex h-80 items-center justify-center text-gray-400 gap-2">
                         <Loader2 className="h-6 w-6 animate-spin" />
-                        <span>Film bilgileri alınıyor...</span>
+                        <span>{t('movie.loading_details')}</span>
                     </div>
                 )}
 
@@ -135,7 +134,7 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                                             {movie.language && <span className="uppercase">🗣️ {movie.language}</span>}
                                         </div>
                                         <p className="text-gray-300 text-sm leading-relaxed">
-                                            {movie.description || "Açıklama bulunamadı."}
+                                            {movie.description || t('movie.no_description')}
                                         </p>
                                     </div>
 
@@ -146,7 +145,7 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                                             className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50"
                                         >
                                             {actionLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                            Gruba Öner / Oylamaya Ekle
+                                            {t('modals.movie_detail.suggest_button')}
                                         </button>
                                     </div>
                                 </>
@@ -156,15 +155,15 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                             {mode === 'SELECT_GROUP' && (
                                 <div className="flex flex-col h-full">
                                     <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-white">Hangi gruba eklensin?</h3>
-                                        <p className="text-sm text-gray-400">Bu film seçtiğin grubun aktif anketine eklenecek.</p>
+                                        <h3 className="text-lg font-semibold text-white">{t('modals.movie_detail.select_group_title')}</h3>
+                                        <p className="text-sm text-gray-400">{t('modals.movie_detail.select_group_desc')}</p>
                                     </div>
 
                                     <div className="flex-1 overflow-y-auto space-y-2 -mx-2 px-2">
                                         {groups.length === 0 ? (
                                             <div className="text-center py-8 text-gray-500">
-                                                Henüz hiç grubun yok. <br />
-                                                <span className="text-xs">Önce "Gruplarım" sayfasından bir grup oluştur.</span>
+                                                {t('modals.movie_detail.no_groups')} <br />
+                                                <span className="text-xs">{t('modals.movie_detail.no_groups_hint')}</span>
                                             </div>
                                         ) : (
                                             groups.map(g => (
@@ -198,7 +197,7 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                                             onClick={() => setMode('DETAIL')}
                                             className="w-full py-2 text-sm text-gray-400 hover:text-white transition"
                                         >
-                                            Geri Dön
+                                            {t('common.back')}
                                         </button>
                                     </div>
                                 </div>
@@ -210,8 +209,8 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                                     <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
                                         <Check className="h-8 w-8" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white">Eklendi!</h3>
-                                    <p className="text-gray-400 mt-2">Film oylamaya başarıyla eklendi.</p>
+                                    <h3 className="text-xl font-bold text-white">{t('modals.movie_detail.success_title')}</h3>
+                                    <p className="text-gray-400 mt-2">{t('modals.movie_detail.success_desc')}</p>
                                 </div>
                             )}
 
@@ -221,8 +220,8 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
                                     <div className="w-16 h-16 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 mb-4">
                                         <Info className="h-8 w-8" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white">Zaten Listede</h3>
-                                    <p className="text-gray-400 mt-2">Bu film zaten oylama listesinde mevcut.</p>
+                                    <h3 className="text-xl font-bold text-white">{t('modals.movie_detail.exists_title')}</h3>
+                                    <p className="text-gray-400 mt-2">{t('modals.movie_detail.exists_desc')}</p>
                                 </div>
                             )}
 

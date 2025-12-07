@@ -1,5 +1,6 @@
 import { apiGet, unwrap } from "./client";
 import type { TmdbMovie } from "./movies";
+import i18n from "@/i18n";
 
 export type TmdbPage<T> = {
     page: number;
@@ -26,15 +27,15 @@ function qs(params: Record<string, string | number | boolean | undefined>) {
 }
 
 /** GET /home/trending */
-export async function fetchTrending(lang = "tr-TR", page = 1) {
+export async function fetchTrending(lang = i18n.language || "tr-TR", page = 1) {
     const resp = await apiGet<TmdbPage<TmdbMovie>>(
         `/home/trending${qs({ lang, page })}`
     );
-    return unwrap(resp); // Non-null döner
+    return unwrap(resp);
 }
 
 /** GET /home/top-rated */
-export async function fetchTopRated(lang = "tr-TR", page = 1) {
+export async function fetchTopRated(lang = i18n.language || "tr-TR", page = 1) {
     const resp = await apiGet<TmdbPage<TmdbMovie>>(
         `/home/top-rated${qs({ lang, page })}`
     );

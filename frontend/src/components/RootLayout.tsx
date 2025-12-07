@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { UserDto, logout } from '@/api/auth';
 import { LayoutDashboard, LogOut } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 interface RootLayoutProps {
     user: UserDto | null;
@@ -10,6 +12,16 @@ interface RootLayoutProps {
 
 export default function RootLayout({ user, onLogout }: RootLayoutProps) {
     const { pathname } = useLocation();
+    const { t } = useTranslation();
+
+    useEffect(() => {
+        document.title = t('meta.title');
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', t('meta.description'));
+        }
+        document.documentElement.lang = localStorage.getItem('i18nextLng') || 'tr';
+    }, [t]);
 
     const handleLogout = async () => {
         await logout();
@@ -31,31 +43,28 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
 
                     <div className="hidden items-center gap-8 md:flex">
                         {user ? (
-                            /* GİRİŞ YAPMIŞ KULLANICI MENÜSÜ */
                             <>
                                 <Link
                                     to="/dashboard"
                                     className={`text-sm font-medium transition-colors flex items-center gap-2 ${pathname === '/dashboard' ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`}
                                 >
                                     <LayoutDashboard className="w-4 h-4" />
-                                    Gruplarım
+                                    {t('nav.myGroups')}
                                 </Link>
                                 <Link to="/explore" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                                    Keşfet
+                                    {t('nav.explore')}
                                 </Link>
                             </>
                         ) : (
-                            /* MİSAFİR KULLANICI MENÜSÜ - SADECE CANLI DEMO */
                             <>
                                 <Link to="/try" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                                    Canlı Demo
+                                    {t('nav.liveDemo')}
                                 </Link>
                             </>
                         )}
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {/* 2. Dil Değiştirici Eklendi (Hem girişli hem girişsiz görünür) */}
                         <LanguageSwitcher />
 
                         {user ? (
@@ -63,7 +72,7 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                                 <Link
                                     to="/profile"
                                     className="hidden text-right sm:block hover:opacity-80 transition cursor-pointer"
-                                    title="Profil Ayarları"
+                                    title={t('nav.profileSettings')}
                                 >
                                     <div className="text-sm font-medium text-white leading-none">{user.displayName}</div>
                                     <div className="text-xs text-gray-500 mt-1">{user.email}</div>
@@ -72,7 +81,7 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                                 <button
                                     onClick={handleLogout}
                                     className="group relative rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
-                                    title="Çıkış Yap"
+                                    title={t('auth.logout')}
                                 >
                                     <LogOut className="h-5 w-5" />
                                 </button>
@@ -83,13 +92,13 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
                                     to="/login"
                                     className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-3 py-2"
                                 >
-                                    Giriş
+                                    {t('auth.login')}
                                 </Link>
                                 <Link
                                     to="/register"
                                     className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-gray-950 transition hover:bg-gray-200"
                                 >
-                                    Kayıt Ol
+                                    {t('auth.register')}
                                 </Link>
                             </div>
                         )}
@@ -109,10 +118,10 @@ export default function RootLayout({ user, onLogout }: RootLayoutProps) {
             <footer className="border-t border-white/5 bg-gray-950 py-12 mt-auto">
                 <div className="container mx-auto px-4 text-center space-y-2">
                     <p className="text-sm text-gray-500">
-                        © {new Date().getFullYear()} CineNight · Film Gecesi Planlayıcı
+                        © {new Date().getFullYear()} CineNight · {t('footer.tagline')}
                     </p>
                     <a href="http://localhost:8080/about" className="text-xs text-indigo-500/60 hover:text-indigo-400 transition underline">
-                        Sistem Bilgisi (SSR)
+                        {t('footer.systemInfo')}
                     </a>
                 </div>
             </footer>

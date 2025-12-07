@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Loader2, Users, Globe, Lock, AlignLeft } from 'lucide-react';
 import { createGroup } from '@/api/groups';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     onClose: () => void;
@@ -13,6 +14,7 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
     const [visibility, setVisibility] = useState<'PUBLIC' | 'LINK' | 'PRIVATE'>('PUBLIC');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslation();
 
     const handleSubmit = async () => {
         if (!name.trim()) return;
@@ -22,7 +24,7 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
 
         const res = await createGroup({
             name,
-            description: description.trim() || 'Film geceleri için oluşturulmuş bir grup.',
+            description: description.trim() || t('groups.my_groups.group_description'),
             visibility
         });
 
@@ -32,7 +34,7 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
             onSuccess();
             onClose();
         } else {
-            setError(res.error || 'Hata oluştu.');
+            setError(res.error || t('errors.generic'));
         }
     };
 
@@ -42,7 +44,7 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
                 <div className="flex items-center justify-between border-b border-white/10 p-5">
                     <h3 className="text-xl font-bold text-white flex items-center gap-2">
                         <Users className="h-6 w-6 text-indigo-500" />
-                        Yeni Grup Oluştur
+                        {t('modals.create_group.title')}
                     </h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition">
                         <X className="h-6 w-6" />
@@ -55,27 +57,27 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
                     <div className="space-y-5">
                         {/* Grup Adı */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1.5">Grup Adı</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('modals.create_group.name_label')}</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="Örn: Matrix Maratonu"
+                                placeholder={t('modals.create_group.name_placeholder')}
                                 className="w-full rounded-xl bg-gray-800/50 border border-white/10 px-4 py-3 text-white focus:border-indigo-500 outline-none placeholder:text-gray-600"
                                 autoFocus
                             />
                         </div>
 
-                        {/* Açıklama Alanı (YENİ EKLENDİ) */}
+                        {/* Açıklama Alanı */}
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-1.5 flex items-center gap-2">
                                 <AlignLeft className="h-4 w-4 text-gray-500" />
-                                Açıklama <span className="text-xs text-gray-600 font-normal">(İsteğe bağlı)</span>
+                                {t('modals.create_group.desc_label')} <span className="text-xs text-gray-600 font-normal">{t('groups.common.optional')}</span>
                             </label>
                             <textarea
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
-                                placeholder="Bu grup ne hakkında? Örn: Sadece korku filmleri izliyoruz..."
+                                placeholder={t('modals.create_group.desc_placeholder')}
                                 rows={3}
                                 className="w-full rounded-xl bg-gray-800/50 border border-white/10 px-4 py-3 text-white focus:border-indigo-500 outline-none resize-none placeholder:text-gray-600"
                             />
@@ -83,23 +85,23 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
 
                         {/* Gizlilik Seçimi */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Gizlilik</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">{t('modals.create_group.privacy_label')}</label>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setVisibility('PUBLIC')}
                                     className={`flex flex-col items-center p-4 rounded-xl border transition-all ${visibility === 'PUBLIC' ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-gray-800 border-white/5 text-gray-400 hover:bg-gray-750 hover:border-white/10'}`}
                                 >
                                     <Globe className="h-6 w-6 mb-2" />
-                                    <span className="font-bold text-sm">Herkese Açık</span>
-                                    <span className="text-[10px] opacity-70">Keşfet'te görünür</span>
+                                    <span className="font-bold text-sm">{t('modals.create_group.public')}</span>
+                                    <span className="text-[10px] opacity-70">{t('modals.create_group.public_hint')}</span>
                                 </button>
                                 <button
                                     onClick={() => setVisibility('LINK')}
                                     className={`flex flex-col items-center p-4 rounded-xl border transition-all ${visibility === 'LINK' ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-gray-800 border-white/5 text-gray-400 hover:bg-gray-750 hover:border-white/10'}`}
                                 >
                                     <Lock className="h-6 w-6 mb-2" />
-                                    <span className="font-bold text-sm">Link ile Katılım</span>
-                                    <span className="text-[10px] opacity-70">Sadece davetle</span>
+                                    <span className="font-bold text-sm">{t('modals.create_group.link')}</span>
+                                    <span className="text-[10px] opacity-70">{t('modals.create_group.link_hint')}</span>
                                 </button>
                             </div>
                         </div>
@@ -110,7 +112,7 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
                             className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 mt-2"
                         >
                             {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-                            Grubu Kur
+                            {t('modals.create_group.submit')}
                         </button>
                     </div>
                 </div>

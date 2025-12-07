@@ -1,4 +1,5 @@
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     isOpen: boolean;
@@ -18,12 +19,17 @@ export default function ConfirmModal({
                                          onConfirm,
                                          title,
                                          description,
-                                         confirmText = "Onayla",
-                                         cancelText = "İptal",
+                                         confirmText,
+                                         cancelText,
                                          variant = 'primary',
                                          loading = false
                                      }: Props) {
+    const { t } = useTranslation();
+
     if (!isOpen) return null;
+
+    const txtConfirm = confirmText || t('common.confirm');
+    const txtCancel = cancelText || t('common.cancel');
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -49,7 +55,7 @@ export default function ConfirmModal({
                             disabled={loading}
                             className="flex-1 py-2.5 rounded-xl bg-gray-800 text-gray-300 font-medium hover:bg-gray-700 transition disabled:opacity-50"
                         >
-                            {cancelText}
+                            {txtCancel}
                         </button>
                         <button
                             onClick={onConfirm}
@@ -61,7 +67,7 @@ export default function ConfirmModal({
                             }`}
                         >
                             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                            {confirmText}
+                            {txtConfirm}
                         </button>
                     </div>
                 </div>

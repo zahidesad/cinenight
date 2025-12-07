@@ -3,12 +3,14 @@ import { fetchExploreGroups, joinGroup, type GroupDto } from '@/api/groups';
 import { UserPlus, Loader2, Globe, Calendar, MapPin, Laptop, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { me } from '@/api/auth';
+import { useTranslation } from 'react-i18next';
 
 export default function ExplorePage() {
     const [groups, setGroups] = useState<GroupDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [joiningId, setJoiningId] = useState<number | null>(null);
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     useEffect(() => {
         async function load() {
@@ -37,7 +39,7 @@ export default function ExplorePage() {
         if (res.ok) {
             navigate(`/groups/${group.id}`);
         } else {
-            alert(res.error || "Katılamadın.");
+            alert(res.error || t('errors.join_failed'));
             setJoiningId(null);
         }
     };
@@ -63,9 +65,9 @@ export default function ExplorePage() {
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 px-4">
             <div className="text-center py-8">
-                <h1 className="text-4xl font-bold text-white mb-2">Toplulukları Keşfet</h1>
+                <h1 className="text-4xl font-bold text-white mb-2">{t('groups.explore.title')}</h1>
                 <p className="text-gray-400 max-w-xl mx-auto">
-                    Yeni insanlarla tanış, film zevkine uygun gruplara katıl ve birlikte izle.
+                    {t('groups.explore.subtitle')}
                 </p>
             </div>
 
@@ -97,7 +99,7 @@ export default function ExplorePage() {
                                         // Düz Metin Modu (Info İkonu ile)
                                         <div className="flex items-start gap-2">
                                             <Info className="h-4 w-4 mt-0.5 text-gray-500 shrink-0" />
-                                            <p className="line-clamp-3 leading-relaxed">{info.text || "Açıklama yok."}</p>
+                                            <p className="line-clamp-3 leading-relaxed">{info.text || t('groups.common.no_description')}</p>
                                         </div>
                                     ) : (
                                         // Formatlı Mod (Özel İkonlar)
@@ -129,7 +131,7 @@ export default function ExplorePage() {
                                     className="mt-auto w-full py-3 rounded-xl bg-white/5 hover:bg-indigo-600 hover:text-white text-gray-300 font-bold transition-all flex items-center justify-center gap-2 border border-white/5 hover:border-transparent group-active:scale-95"
                                 >
                                     {joiningId === g.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-                                    Gruba Katıl
+                                    {t('groups.explore.join_button')}
                                 </button>
                             </div>
                         );
@@ -139,7 +141,7 @@ export default function ExplorePage() {
 
             {!loading && groups.length === 0 && (
                 <div className="text-center py-20 text-gray-500">
-                    <p>Henüz herkese açık bir grup yok.</p>
+                    <p>{t('groups.explore.no_groups')}</p>
                 </div>
             )}
         </div>

@@ -3,7 +3,8 @@ import { X, Loader2, MapPin, Clock, Film } from 'lucide-react';
 import { createEvent } from '@/api/events';
 import { closePoll } from '@/api/polls';
 import { DayPicker } from 'react-day-picker';
-import { tr } from 'date-fns/locale';
+import { tr, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import 'react-day-picker/style.css';
 
 type MovieOption = { tmdbId: number; title: string };
@@ -18,6 +19,8 @@ type Props = {
 
 export default function CreateEventModal({ groupId, pollId, movies, onClose, onSuccess }: Props) {
     const [selectedMovieId, setSelectedMovieId] = useState<number>(movies[0].tmdbId);
+    const { t, i18n } = useTranslation();
+    const dateLocale = i18n.language === 'en' ? enUS : tr;
 
     const [selectedDate, setSelectedDate] = useState<Date>();
     const [time, setTime] = useState('21:00');
@@ -36,7 +39,7 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
 
         const res = await createEvent({
             groupId,
-            title: `${selectedMovie.title} - İzleme Gecesi`,
+            title: `${selectedMovie.title} - İzleme Gecesi`, // Bu kısmı olduğu gibi bıraktım, dilerseniz burayı da çevirebiliriz ama film adı içerdiği için böyle kalması mantıklı.
             tmdbId: selectedMovie.tmdbId,
             startTime: startDate.toISOString(),
             locationText: location || 'Discord / Online'
@@ -49,7 +52,7 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
             onClose();
         } else {
             setLoading(false);
-            alert(res.error || "Etkinlik oluşturulamadı.");
+            alert(res.error || t('errors.event_create_failed'));
         }
     };
 
@@ -57,14 +60,14 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
             <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h3 className="font-bold text-white">Etkinlik Planla</h3>
+                    <h3 className="font-bold text-white">{t('modals.create_event.title')}</h3>
                     <button onClick={onClose}><X className="h-5 w-5 text-gray-400" /></button>
                 </div>
 
                 <div className="p-6 space-y-6 overflow-y-auto">
                     {movies.length > 1 ? (
                         <div className="bg-gray-800/50 p-3 rounded-xl border border-amber-500/30">
-                            <div className="text-xs font-bold text-amber-400 mb-2 uppercase tracking-wide text-center">Beraberlik! Hangi filmi seçiyorsun?</div>
+                            <div className="text-xs font-bold text-amber-400 mb-2 uppercase tracking-wide text-center">{t('modals.create_event.tie_text')}</div>
                             <div className="space-y-2">
                                 {movies.map(m => (
                                     <label key={m.tmdbId} className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${selectedMovieId === m.tmdbId ? 'bg-indigo-600/20 border-indigo-500' : 'border-white/5 hover:bg-white/5'}`}>
@@ -82,7 +85,7 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
                         </div>
                     ) : (
                         <div className="text-center">
-                            <div className="text-sm text-gray-400 mb-1 flex items-center justify-center gap-1"><Film className="h-3 w-3"/> Kazanan Film</div>
+                            <div className="text-sm text-gray-400 mb-1 flex items-center justify-center gap-1"><Film className="h-3 w-3"/> {t('modals.create_event.winner_label')}</div>
                             <div className="text-lg font-bold text-emerald-400">{selectedMovie.title}</div>
                         </div>
                     )}
@@ -93,7 +96,7 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
                             mode="single"
                             selected={selectedDate}
                             onSelect={setSelectedDate}
-                            locale={tr}
+                            locale={dateLocale}
                             disabled={{ before: new Date() }}
                             styles={{ caption: { color: 'white' }, head_cell: { color: '#9ca3af' }, day: { color: 'white' }, nav_button: { color: 'white' } }}
                         />
@@ -101,11 +104,11 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Clock className="h-3 w-3"/> Saat</label>
+                            <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Clock className="h-3 w-3"/> {t('modals.create_event.time')}</label>
                             <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-white" />
                         </div>
                         <div>
-                            <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin className="h-3 w-3"/> Yer/Platform</label>
+                            <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin className="h-3 w-3"/> {t('modals.create_event.location')}</label>
                             <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Discord..." className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-white" />
                         </div>
                     </div>
@@ -116,7 +119,7 @@ export default function CreateEventModal({ groupId, pollId, movies, onClose, onS
                         className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {loading && <Loader2 className="animate-spin h-4 w-4" />}
-                        Onayla ve Anketi Bitir
+                        {t('modals.create_event.submit')}
                     </button>
                 </div>
             </div>

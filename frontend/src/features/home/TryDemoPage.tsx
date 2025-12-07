@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Calendar, Check, Film, MapPin, Trophy, X, Clock, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
-// --- MOCK DATA ---
 const MOCK_POLL_OPTIONS = [
     {
         id: 1,
         title: 'Inception',
         releaseYear: 2010,
         posterPath: '/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg',
-        backdropPath: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg', // EKLENDİ
+        backdropPath: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
         voteCount: 4,
         addedBy: 'Ahmet',
         isVotedByMe: false
@@ -19,7 +19,7 @@ const MOCK_POLL_OPTIONS = [
         title: 'Interstellar',
         releaseYear: 2014,
         posterPath: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        backdropPath: '/pbrkL804c8yAv3zBZR4QPEafpAR.jpg', // EKLENDİ
+        backdropPath: '/pbrkL804c8yAv3zBZR4QPEafpAR.jpg',
         voteCount: 2,
         addedBy: 'Zeynep',
         isVotedByMe: false
@@ -29,7 +29,7 @@ const MOCK_POLL_OPTIONS = [
         title: 'The Prestige',
         releaseYear: 2006,
         posterPath: '/tRNlZbgNCNOpLpbPEz5L8G8A0JN.jpg',
-        backdropPath: '/6V1diE50sc44pL95OApQYJ979X.jpg', // EKLENDİ
+        backdropPath: '/6V1diE50sc44pL95OApQYJ979X.jpg',
         voteCount: 1,
         addedBy: 'Can',
         isVotedByMe: false
@@ -40,10 +40,10 @@ const MOCK_EVENTS = [
     {
         id: 101,
         title: 'Christopher Nolan Gecesi',
-        startTime: new Date().toISOString(), // Bugün
+        startTime: new Date().toISOString(),
         locationText: 'Discord #film-gecesi',
         movieTitle: 'Inception',
-        backdropPath: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg', // EKLENDİ
+        backdropPath: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
         myRsvp: null as 'YES' | 'NO' | 'MAYBE' | null,
         participants: [
             { userId: 1, displayName: 'Ahmet', avatarUrl: '' },
@@ -59,6 +59,7 @@ export default function TryDemoPage() {
     // Local State ile interaktivite simülasyonu
     const [options, setOptions] = useState(MOCK_POLL_OPTIONS);
     const [events, setEvents] = useState(MOCK_EVENTS);
+    const { t } = useTranslation();
 
     // Oy Verme Simülasyonu
     const handleVote = (id: number) => {
@@ -95,14 +96,13 @@ export default function TryDemoPage() {
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-500/20 rounded-full mb-4">
                     <Info className="h-6 w-6 text-indigo-400" />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-2">Canlı Demo Modu</h1>
+                <h1 className="text-2xl font-bold text-white mb-2">{t('home.demo.title')}</h1>
                 <p className="text-gray-300 max-w-2xl mx-auto">
-                    Şu anda uygulamanın bir simülasyonunu görüntülüyorsunuz. Aşağıdaki butonlara tıklayarak oy verebilir,
-                    etkinliklere katılım durumunuzu değiştirebilirsiniz. Bu veriler sadece sizin tarayıcınızda geçici olarak tutulur.
+                    {t('home.demo.description')}
                 </p>
                 <div className="mt-6">
                     <Link to="/register" className="px-6 py-3 bg-white text-indigo-900 font-bold rounded-xl hover:bg-gray-100 transition shadow-lg">
-                        Hesap Oluştur ve Başla
+                        {t('home.demo.register_button')}
                     </Link>
                 </div>
             </div>
@@ -111,7 +111,7 @@ export default function TryDemoPage() {
             <section className="space-y-4">
                 <div className="flex items-center gap-2 text-emerald-400 font-semibold uppercase tracking-wider text-sm">
                     <Calendar className="h-4 w-4" />
-                    Yaklaşan Etkinlikler
+                    {t('home.demo.upcoming_events')}
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -136,7 +136,7 @@ export default function TryDemoPage() {
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col items-center justify-center bg-gray-800/80 border border-white/10 rounded-xl p-2 min-w-[3.5rem] backdrop-blur-md">
-                                            <span className="text-xs font-bold text-gray-400 uppercase">BUGÜN</span>
+                                            <span className="text-xs font-bold text-gray-400 uppercase">{t('home.demo.today')}</span>
                                             <span className="text-xl font-bold text-white">21</span>
                                         </div>
                                         <div>
@@ -147,8 +147,8 @@ export default function TryDemoPage() {
                                             <div className="text-xs text-gray-300 capitalize drop-shadow-md">Cuma</div>
                                         </div>
                                     </div>
-                                    {evt.myRsvp === 'YES' && <span className="px-2 py-1 rounded bg-emerald-500 text-white text-[10px] font-bold shadow-lg">KATILIYORSUN</span>}
-                                    {evt.myRsvp === 'NO' && <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold backdrop-blur-md">KATILMIYORSUN</span>}
+                                    {evt.myRsvp === 'YES' && <span className="px-2 py-1 rounded bg-emerald-500 text-white text-[10px] font-bold shadow-lg">{t('groups.detail.coming_badge')}</span>}
+                                    {evt.myRsvp === 'NO' && <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold backdrop-blur-md">{t('groups.detail.not_coming_badge')}</span>}
                                 </div>
 
                                 <h3 className="text-xl font-bold text-white mb-2 drop-shadow-lg">{evt.title}</h3>
@@ -173,7 +173,7 @@ export default function TryDemoPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    <span className="text-xs text-gray-400 ml-1 font-medium">+3 kişi geliyor</span>
+                                    <span className="text-xs text-gray-400 ml-1 font-medium">{t('home.demo.plus_coming')}</span>
                                 </div>
 
                                 {/* Aksiyonlar */}
@@ -182,7 +182,7 @@ export default function TryDemoPage() {
                                         onClick={() => handleRsvp(evt.id, 'YES')}
                                         className={`flex-1 py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 ${evt.myRsvp === 'YES' ? 'bg-emerald-600 text-white cursor-default shadow-lg' : 'bg-gray-800/80 hover:bg-emerald-600 hover:text-white text-gray-300 border border-white/10 backdrop-blur-sm'}`}
                                     >
-                                        <Check className="h-4 w-4" /> Geliyorum
+                                        <Check className="h-4 w-4" /> {t('groups.detail.btn_coming')}
                                     </button>
                                     <button
                                         onClick={() => handleRsvp(evt.id, 'NO')}
@@ -205,9 +205,9 @@ export default function TryDemoPage() {
                     <div>
                         <div className="flex items-center gap-2 text-indigo-400 font-semibold uppercase tracking-wider text-sm mb-1">
                             <span className="text-lg">🗳️</span>
-                            Oylama Devam Ediyor
+                            {t('home.demo.poll_status')}
                         </div>
-                        <h2 className="text-2xl font-bold text-white">Bu Hafta Sonu Ne İzleyelim?</h2>
+                        <h2 className="text-2xl font-bold text-white">{t('home.demo.poll_title')}</h2>
                     </div>
                 </div>
 
@@ -233,12 +233,12 @@ export default function TryDemoPage() {
                             </div>
                             <div>
                                 <div className={`text-xs font-bold uppercase tracking-wider mb-1 drop-shadow-md ${isTie ? 'text-amber-400' : 'text-indigo-300'}`}>
-                                    {isTie ? 'ÇEKİŞMELİ DURUM!' : 'ŞU ANKİ LİDER'}
+                                    {isTie ? t('groups.poll.tie_title') : t('groups.poll.leader_title')}
                                 </div>
                                 <div className="text-white font-bold text-2xl leading-none drop-shadow-lg">
-                                    {isTie ? `${winners.length} Film Zirvede` : winners[0].title}
+                                    {isTie ? t('groups.poll.tie_count', { count: winners.length }) : winners[0].title}
                                 </div>
-                                <div className="text-gray-300 text-sm mt-1 drop-shadow-md">{winners[0].voteCount} oy ile</div>
+                                <div className="text-gray-300 text-sm mt-1 drop-shadow-md">{t('groups.poll.vote_count', { count: winners[0].voteCount })}</div>
                             </div>
                         </div>
                     </div>
@@ -273,6 +273,13 @@ export default function TryDemoPage() {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Detaylar Hover */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                        <span className="text-white text-xs font-bold border border-white/40 px-4 py-2 rounded-full bg-black/50 hover:bg-white hover:text-black transition-colors">
+                                            {t('home.demo.details')}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* Content */}
@@ -284,7 +291,7 @@ export default function TryDemoPage() {
                                         </div>
                                     </div>
 
-                                    <h3 className="font-bold text-gray-100 text-sm leading-tight line-clamp-2 mb-2 min-h-[2.5rem]">
+                                    <h3 className="font-bold text-gray-100 text-sm leading-tight line-clamp-2 mb-2 min-h-[2.5rem]" title={opt.title}>
                                         {opt.title}
                                     </h3>
 
@@ -305,9 +312,9 @@ export default function TryDemoPage() {
                                         }`}
                                     >
                                         {opt.isVotedByMe ? (
-                                            <><Check className="h-3.5 w-3.5" /> Oy Verildi</>
+                                            <><Check className="h-3.5 w-3.5" /> {t('groups.poll.voted')}</>
                                         ) : (
-                                            'Oy Ver'
+                                            t('groups.poll.vote')
                                         )}
                                     </button>
                                 </div>

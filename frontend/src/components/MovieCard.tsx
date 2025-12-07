@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MoviesApi } from "@/api/movies";
 import type { TmdbMovie } from "@/api/movies";
+import { useTranslation } from "react-i18next";
 
 const IMG = "https://image.tmdb.org/t/p";
 
@@ -23,7 +24,7 @@ type BaseProps = {
 
 type Props =
     (
-        | { variant?: "tmdb"; movie: AnyMovie } // default
+        | { variant?: "tmdb"; movie: AnyMovie }
         | { variant: "top"; movie: TopMovie }
         ) & BaseProps;
 
@@ -31,22 +32,21 @@ type Props =
 export default function MovieCard(props: Props) {
     const { onCardClick } = props;
     const [busy, setBusy] = useState(false);
+    const { t } = useTranslation();
 
     const tmdbId = (props.movie as AnyMovie).tmdbId || (props.movie as AnyMovie).id;
 
-    const title = (props.movie as AnyMovie).title || (props.movie as AnyMovie).name || "Başlık Yok";
+    const title = (props.movie as AnyMovie).title || (props.movie as AnyMovie).name || t('movie.no_title');
 
     const poster = (props.movie as AnyMovie).posterPath || (props.movie as AnyMovie).poster_path;
 
     const posterUrl = poster ? `${IMG}/w342${poster}` : "/no-poster.svg";
 
     const onClick = async () => {
-        // EKLENDİ: Eğer onCardClick prop'u varsa, modalı açmak için çağır.
         if (onCardClick) {
             onCardClick(tmdbId);
         }
 
-        // Mevcut izlenme kaydı mantığını koru
         try {
             setBusy(true);
             await MoviesApi.recordView(tmdbId);

@@ -3,19 +3,24 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
 import { fetchGroupEvents, rsvpEvent, type EventDto } from '@/api/events';
 import { fetchMyGroups, deleteGroup, leaveGroup } from '@/api/groups';
-import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock, Settings, Trash2, LogOut } from 'lucide-react'; // LogOut EKLENDİ
+import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock, Settings, Trash2, LogOut } from 'lucide-react';
 import MovieDetailModal from '@/components/MovieDetailModal';
 import { format } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { tr, enUS } from 'date-fns/locale'; // enUS Eklendi
 import CreateEventModal from './components/CreateEventModal';
 import MembersModal from './components/MembersModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useTranslation } from 'react-i18next';
 
 const IMG = "https://image.tmdb.org/t/p";
 
 export default function GroupDetailPage() {
     const { groupId } = useParams();
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
+
+    // Tarih formatı için locale seçimi
+    const dateLocale = i18n.language === 'en' ? enUS : tr;
 
     // --- State ---
     const [poll, setPoll] = useState<PollDetailDto | null>(null);
@@ -37,8 +42,8 @@ export default function GroupDetailPage() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false); // EKLENDİ
-    const [leaveLoading, setLeaveLoading] = useState(false); // EKLENDİ
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [leaveLoading, setLeaveLoading] = useState(false);
 
     const [inviteToken, setInviteToken] = useState<string | null>(null);
 
@@ -112,7 +117,7 @@ export default function GroupDetailPage() {
         } else {
             setDeleteLoading(false);
             setShowDeleteConfirm(false);
-            alert(res.error || "Grup silinemedi.");
+            alert(res.error || t('errors.group_delete_failed'));
         }
     };
 
@@ -125,7 +130,7 @@ export default function GroupDetailPage() {
         } else {
             setLeaveLoading(false);
             setShowLeaveConfirm(false);
-            alert(res.error || "Gruptan ayrılamadın.");
+            alert(res.error || t('errors.group_leave_failed'));
         }
     };
 
@@ -161,10 +166,10 @@ export default function GroupDetailPage() {
                         <ChevronLeft className="h-5 w-5" />
                     </Link>
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Grup Detayı</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{t('groups.detail.title')}</h1>
                         <div className="flex items-center gap-2 mt-1">
-                            {role === 'OWNER' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold border border-amber-500/30">YÖNETİCİ</span>}
-                            <span className="text-gray-400 text-sm">Etkinlikler ve Oylamalar</span>
+                            {role === 'OWNER' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold border border-amber-500/30">{t('groups.roles.owner').toUpperCase()}</span>}
+                            <span className="text-gray-400 text-sm">{t('groups.detail.subtitle')}</span>
                         </div>
                     </div>
                 </div>
@@ -175,18 +180,18 @@ export default function GroupDetailPage() {
                         <button
                             onClick={() => setShowDeleteConfirm(true)}
                             className="p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition border border-red-500/20"
-                            title="Grubu Sil"
+                            title={t('modals.delete_group.title')}
                         >
                             <Trash2 className="h-5 w-5" />
                         </button>
                     )}
 
-                    {/* ÜYE İSE AYRIL BUTONU (YENİ EKLENDİ) */}
+                    {/* ÜYE İSE AYRIL BUTONU */}
                     {role !== 'OWNER' && (
                         <button
                             onClick={() => setShowLeaveConfirm(true)}
                             className="p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition border border-red-500/20"
-                            title="Gruptan Ayrıl"
+                            title={t('modals.leave_group.title')}
                         >
                             <LogOut className="h-5 w-5" />
                         </button>
@@ -195,7 +200,7 @@ export default function GroupDetailPage() {
                     <button
                         onClick={() => setShowMembersModal(true)}
                         className="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition border border-white/10"
-                        title="Üyeler"
+                        title={t('modals.members.title')}
                     >
                         <Settings className="h-5 w-5" />
                     </button>
@@ -205,7 +210,7 @@ export default function GroupDetailPage() {
                         className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-sm font-semibold border border-indigo-500/20 hover:border-indigo-500 shadow-lg shadow-indigo-500/5"
                     >
                         {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />}
-                        {copied ? "Link Kopyalandı" : "Arkadaşlarını Davet Et"}
+                        {copied ? t('groups.detail.invite_copied') : t('groups.detail.invite_button')}
                     </button>
                 </div>
             </div>
@@ -215,7 +220,7 @@ export default function GroupDetailPage() {
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 text-emerald-400 font-semibold uppercase tracking-wider text-sm">
                         <Calendar className="h-4 w-4" />
-                        Planlanan Etkinlikler
+                        {t('groups.detail.scheduled_events')}
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
@@ -230,7 +235,7 @@ export default function GroupDetailPage() {
                                         <div className="flex items-center gap-3">
                                             <div className="flex flex-col items-center justify-center bg-gray-800/80 border border-white/10 rounded-xl p-2 min-w-[3.5rem]">
                                                 <span className="text-xs font-bold text-gray-400 uppercase">
-                                                    {format(new Date(evt.startTime), 'MMM', { locale: tr })}
+                                                    {format(new Date(evt.startTime), 'MMM', { locale: dateLocale })}
                                                 </span>
                                                 <span className="text-xl font-bold text-white">
                                                     {format(new Date(evt.startTime), 'dd')}
@@ -242,13 +247,13 @@ export default function GroupDetailPage() {
                                                     {format(new Date(evt.startTime), 'HH:mm')}
                                                 </div>
                                                 <div className="text-xs text-gray-400 capitalize">
-                                                    {format(new Date(evt.startTime), 'EEEE', { locale: tr })}
+                                                    {format(new Date(evt.startTime), 'EEEE', { locale: dateLocale })}
                                                 </div>
                                             </div>
                                         </div>
                                         {/* Katılım Durumu Rozeti */}
-                                        {evt.myRsvp === 'YES' && <span className="px-2 py-1 rounded bg-emerald-500 text-white text-[10px] font-bold shadow-lg">KATILIYORSUN</span>}
-                                        {evt.myRsvp === 'NO' && <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold">KATILMIYORSUN</span>}
+                                        {evt.myRsvp === 'YES' && <span className="px-2 py-1 rounded bg-emerald-500 text-white text-[10px] font-bold shadow-lg">{t('groups.detail.coming_badge')}</span>}
+                                        {evt.myRsvp === 'NO' && <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold">{t('groups.detail.not_coming_badge')}</span>}
                                     </div>
 
                                     <h3 className="text-xl font-bold text-white mb-2 leading-snug break-words">
@@ -288,7 +293,7 @@ export default function GroupDetailPage() {
                                                     </div>
                                                 ))}
                                             </div>
-                                            <span className="text-xs text-gray-500 ml-1 font-medium">geliyor</span>
+                                            <span className="text-xs text-gray-500 ml-1 font-medium">{t('groups.detail.coming_count')}</span>
                                         </div>
                                     )}
 
@@ -299,13 +304,13 @@ export default function GroupDetailPage() {
                                             disabled={rsvpLoading === evt.id}
                                             className={`flex-1 py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 ${evt.myRsvp === 'YES' ? 'bg-emerald-600 text-white cursor-default' : 'bg-gray-800 hover:bg-emerald-600 hover:text-white text-gray-300 border border-white/5'}`}
                                         >
-                                            <Check className="h-4 w-4" /> Geliyorum
+                                            <Check className="h-4 w-4" /> {t('groups.detail.btn_coming')}
                                         </button>
                                         <button
                                             onClick={() => handleRsvp(evt.id, 'NO')}
                                             disabled={rsvpLoading === evt.id}
                                             className={`px-4 rounded-xl text-sm font-medium transition ${evt.myRsvp === 'NO' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-gray-800 hover:bg-red-500/20 hover:text-red-400 text-gray-400 border border-white/5'}`}
-                                            title="Gelemiyorum"
+                                            title={t('groups.detail.btn_not_coming')}
                                         >
                                             <X className="h-5 w-5" />
                                         </button>
@@ -327,7 +332,7 @@ export default function GroupDetailPage() {
                         <div>
                             <div className="flex items-center gap-2 text-indigo-400 font-semibold uppercase tracking-wider text-sm mb-1">
                                 <span className="text-lg">🗳️</span>
-                                {poll.isOpen ? 'Oylama Devam Ediyor' : 'Oylama Kapandı'}
+                                {poll.isOpen ? t('groups.poll.status_open') : t('groups.poll.status_closed')}
                             </div>
                             <h2 className="text-2xl font-bold text-white">{poll.title}</h2>
                         </div>
@@ -344,12 +349,12 @@ export default function GroupDetailPage() {
                                 </div>
                                 <div>
                                     <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${isTie ? 'text-amber-400' : 'text-indigo-200'}`}>
-                                        {isTie ? 'KRİTİK DURUM: BERABERLİK!' : 'ŞU ANKİ LİDER'}
+                                        {isTie ? t('groups.poll.tie_title') : t('groups.poll.leader_title')}
                                     </div>
                                     <div className="text-white font-bold text-2xl leading-none">
-                                        {isTie ? `${winners.length} Film Zirvede` : winners[0].title}
+                                        {isTie ? t('groups.poll.tie_count', { count: winners.length }) : winners[0].title}
                                     </div>
-                                    <div className="text-gray-400 text-sm mt-1">{winners[0].voteCount} oy ile</div>
+                                    <div className="text-gray-400 text-sm mt-1">{t('groups.poll.vote_count', { count: winners[0].voteCount })}</div>
                                 </div>
                             </div>
 
@@ -358,7 +363,7 @@ export default function GroupDetailPage() {
                                 className={`relative z-10 px-6 py-3 rounded-xl font-bold text-sm transition shadow-xl hover:shadow-white/10 whitespace-nowrap flex items-center gap-2 ${isTie ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-white hover:bg-gray-100 text-indigo-900'}`}
                             >
                                 <Calendar className="h-4 w-4" />
-                                {isTie ? 'Seçim Yap & Planla' : 'Oylamayı Bitir & Planla'}
+                                {isTie ? t('groups.poll.resolve_tie') : t('groups.poll.end_and_plan')}
                             </button>
                         </div>
                     )}
@@ -448,9 +453,9 @@ export default function GroupDetailPage() {
                                             {votingId === opt.id ? (
                                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                             ) : opt.isVotedByMe ? (
-                                                <><Check className="h-3.5 w-3.5" /> Oy Verildi</>
+                                                <><Check className="h-3.5 w-3.5" /> {t('groups.poll.voted')}</>
                                             ) : (
-                                                'Oy Ver'
+                                                t('groups.poll.vote')
                                             )}
                                         </button>
                                     </div>
@@ -466,11 +471,11 @@ export default function GroupDetailPage() {
                         <div className="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 text-gray-600">
                             <Film className="h-10 w-10" />
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-2">Henüz Aktif Bir Şey Yok</h3>
-                        <p className="text-gray-400 mb-8 max-w-md">Grubunda şimdilik sessizlik hakim. Arkadaşlarını topla ve bir film gecesi planla.</p>
+                        <h3 className="text-2xl font-bold text-white mb-2">{t('groups.detail.empty_state_title')}</h3>
+                        <p className="text-gray-400 mb-8 max-w-md">{t('groups.detail.empty_state_desc')}</p>
                         <Link to="/" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/20 hover:-translate-y-1">
                             <Film className="h-5 w-5" />
-                            Film Öner ve Başlat
+                            {t('groups.detail.suggest_start')}
                         </Link>
                     </div>
                 )
@@ -488,11 +493,11 @@ export default function GroupDetailPage() {
                 <CreateEventModal
                     groupId={Number(groupId)}
                     pollId={poll.id}
-                    movies={winners} // Kazananların listesini gönderiyoruz (Beraberlik için)
+                    movies={winners}
                     onClose={() => setShowEventModal(false)}
                     onSuccess={() => {
-                        loadData(); // Sayfayı yenile
-                        setPoll(prev => prev ? { ...prev, isOpen: false } : null); // UI'dan Planla butonunu anında kaldır
+                        loadData();
+                        setPoll(prev => prev ? { ...prev, isOpen: false } : null);
                     }}
                 />
             )}
@@ -510,10 +515,10 @@ export default function GroupDetailPage() {
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
                 onConfirm={handleDeleteGroup}
-                title="Grubu Sil"
-                description="Bu grubu ve içindeki tüm etkinlik, anket ve geçmiş verileri kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz."
-                confirmText="Evet, Grubu Sil"
-                cancelText="Vazgeç"
+                title={t('modals.delete_group.title')}
+                description={t('modals.delete_group.desc')}
+                confirmText={t('modals.delete_group.confirm')}
+                cancelText={t('common.cancel')}
                 variant="danger"
                 loading={deleteLoading}
             />
@@ -523,10 +528,10 @@ export default function GroupDetailPage() {
                 isOpen={showLeaveConfirm}
                 onClose={() => setShowLeaveConfirm(false)}
                 onConfirm={handleLeaveGroup}
-                title="Gruptan Ayrıl"
-                description="Bu gruptan ayrılmak istediğine emin misin? Tekrar katılmak için davet linkine ihtiyacın olacak."
-                confirmText="Evet, Ayrıl"
-                cancelText="Vazgeç"
+                title={t('modals.leave_group.title')}
+                description={t('modals.leave_group.desc')}
+                confirmText={t('modals.leave_group.confirm')}
+                cancelText={t('common.cancel')}
                 variant="danger"
                 loading={leaveLoading}
             />

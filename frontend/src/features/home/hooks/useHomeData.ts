@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchTrending, fetchTopRated, fetchTopMovies, TopMovie } from "@/api/home";
 import { searchMovies, PagedMovies, type TmdbMovie } from "@/api/movies";
+import { useTranslation } from "react-i18next";
 
 export type TabKey = "trending" | "toprated" | "cinenight";
 
 export type UseHomeDataReturn = ReturnType<typeof useHomeData>;
 
-export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
-    const [lang, setLang] = useState(initialLang);
+export function useHomeData(initialLimitTop = 12) {
+    const { t, i18n } = useTranslation();
+    const [lang, setLang] = useState(i18n.language || "tr-TR");
+
+    // Dil değiştiğinde state'i güncelle
+    useEffect(() => {
+        setLang(i18n.language);
+    }, [i18n.language]);
 
     const [q, setQ] = useState("");
     const [active, setActive] = useState<TabKey>("trending");
@@ -93,7 +100,7 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
             if(resp.ok) {
                 setSearchResults(resp.data);
             } else {
-                setSearchErr(resp.error || "Arama başarısız oldu.");
+                setSearchErr(resp.error || t('errors.search_failed'));
             }
         } catch (e: unknown) {
             const msg =
@@ -101,12 +108,12 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
                     ? e.message
                     : typeof e === "string"
                         ? e
-                        : "Arama sırasında bir hata oluştu.";
+                        : t('errors.search_error');
             setSearchErr(msg);
         } finally {
             setIsSearching(false);
         }
-    }, [lang]);
+    }, [lang, t]);
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -123,7 +130,7 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
         loadTrending(false, 1);
         loadTopRated(false, 1);
         loadTopCine(initialLimitTop);
-    }, [loadTrending, loadTopRated, loadTopCine, initialLimitTop, lang]);
+    }, [loadTrending, loadTopRated, loadTopCine, initialLimitTop]);
 
     const featured = useMemo(() => trend[0] ?? toprated[0] ?? null, [trend, toprated]);
 
@@ -159,5 +166,6 @@ export function useHomeData(initialLang = "tr-TR", initialLimitTop = 12) {
         searchResults, isSearching, searchErr,
         loadingKey, errKey,
         loadTrending,
+        loadTopRated,
     }
 }

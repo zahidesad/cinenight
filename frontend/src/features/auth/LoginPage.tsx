@@ -28,9 +28,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             const redirectUrl = searchParams.get('redirect') || '/';
             navigate(redirectUrl);
         } else {
-            let msg = res.error || 'Giriş yapılamadı.';
+            let msg = res.error || t('auth.pages.login.error_generic');
             if (msg.includes('disabled')) {
-                msg = 'Hesabın henüz aktif değil. Lütfen e-postana gönderilen doğrulama bağlantısına tıkla.';
+                msg = t('auth.pages.login.error_inactive');
             }
             setError(msg);
         }
@@ -39,19 +39,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     return (
         <div className="space-y-6">
             <div className="text-center">
-                <h2 className="text-2xl font-semibold text-gray-200">{t('login')}</h2>
-                <p className="mt-1 text-sm text-gray-400">Film gecelerine kaldığın yerden devam et.</p>
+                <h2 className="text-2xl font-semibold text-gray-200">{t('auth.pages.login.title')}</h2>
+                <p className="mt-1 text-sm text-gray-400">{t('auth.pages.login.subtitle')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <label className="block text-sm text-gray-300">
-                    E-posta
+                    {t('auth.fields.email')}
                     <div className="mt-1 flex items-center rounded-lg border border-gray-600 bg-gray-700 px-3">
                         <Mail className="mr-2 h-4 w-4 text-gray-300" />
                         <input
                             className="w-full bg-transparent py-3 text-white placeholder-gray-400 focus:outline-none"
                             type="email"
-                            placeholder="ornek@mail.com"
+                            placeholder={t('auth.fields.email_placeholder')}
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -60,18 +60,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </label>
 
                 <label className="block text-sm text-gray-300">
-                    Şifre
+                    {t('auth.fields.password')}
                     <div className="mt-1 flex items-center rounded-lg border border-gray-600 bg-gray-700 px-3">
                         <Lock className="mr-2 h-4 w-4 text-gray-300" />
                         <input
                             className="w-full bg-transparent py-3 text-white placeholder-gray-400 focus:outline-none"
                             type={showPw ? 'text' : 'password'}
-                            placeholder="••••••••"
+                            placeholder={t('auth.fields.password_placeholder')}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                        <button type="button" onClick={() => setShowPw(s => !s)} className="text-gray-300">
+                        <button
+                            type="button"
+                            onClick={() => setShowPw(s => !s)}
+                            className="text-gray-300"
+                            aria-label={showPw ? t('auth.aria.hide_password') : t('auth.aria.show_password')}
+                        >
                             {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                     </div>
@@ -80,13 +85,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 {error && <div className="rounded-md bg-red-900/40 p-3 text-center text-sm text-red-200">{error}</div>}
 
                 <button type="submit" className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700">
-                    Giriş Yap
+                    {t('auth.pages.login.submit')}
                 </button>
             </form>
 
             <div className="flex justify-between text-sm">
-                <Link to="/forgot-password" className="font-medium text-indigo-400 hover:text-indigo-300">Şifremi Unuttum</Link>
-                <Link to="/register" className="font-medium text-indigo-400 hover:text-indigo-300">Hesap Oluştur</Link>
+                <Link to="/forgot-password" className="font-medium text-indigo-400 hover:text-indigo-300">{t('auth.pages.login.forgot_password')}</Link>
+                <Link to="/register" className="font-medium text-indigo-400 hover:text-indigo-300">{t('auth.pages.login.create_account')}</Link>
             </div>
         </div>
     );

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { X, Loader2, Trash2, Shield, User } from 'lucide-react';
 import { fetchGroupMembers, removeMember, type GroupMemberDto } from '@/api/groups';
-import ConfirmModal from '@/components/ConfirmModal'; // EKLENDİ
+import ConfirmModal from '@/components/ConfirmModal';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     groupId: number;
@@ -12,6 +13,7 @@ type Props = {
 export default function MembersModal({ groupId, isOwner, onClose }: Props) {
     const [members, setMembers] = useState<GroupMemberDto[]>([]);
     const [loading, setLoading] = useState(true);
+    const { t } = useTranslation();
 
     // Modal State
     const [userToRemove, setUserToRemove] = useState<number | null>(null);
@@ -42,7 +44,7 @@ export default function MembersModal({ groupId, isOwner, onClose }: Props) {
             setMembers(prev => prev.filter(m => m.userId !== userToRemove));
             setUserToRemove(null); // Modalı kapat
         } else {
-            alert(res.error || "İşlem başarısız.");
+            alert(res.error || t('errors.action_failed'));
         }
         setRemoveLoading(false);
     };
@@ -54,7 +56,7 @@ export default function MembersModal({ groupId, isOwner, onClose }: Props) {
                     <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gray-800/50">
                         <h3 className="font-bold text-white flex items-center gap-2">
                             <User className="h-5 w-5 text-indigo-400" />
-                            Grup Üyeleri
+                            {t('modals.members.title')}
                         </h3>
                         <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition"><X className="h-5 w-5 text-gray-400" /></button>
                     </div>
@@ -74,7 +76,7 @@ export default function MembersModal({ groupId, isOwner, onClose }: Props) {
                                                 {m.displayName}
                                                 {m.role === 'OWNER' && <Shield className="h-3 w-3 text-amber-500" />}
                                             </div>
-                                            <div className="text-xs text-gray-500">{m.role === 'OWNER' ? 'Yönetici' : 'Üye'}</div>
+                                            <div className="text-xs text-gray-500">{m.role === 'OWNER' ? t('groups.roles.owner') : t('groups.roles.member')}</div>
                                         </div>
                                     </div>
 
@@ -82,7 +84,7 @@ export default function MembersModal({ groupId, isOwner, onClose }: Props) {
                                         <button
                                             onClick={() => confirmRemove(m.userId)}
                                             className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                                            title="Gruptan At"
+                                            title={t('modals.members.kick_tooltip')}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
@@ -93,7 +95,7 @@ export default function MembersModal({ groupId, isOwner, onClose }: Props) {
                     </div>
 
                     <div className="p-3 border-t border-white/10 bg-gray-800/30 text-center text-xs text-gray-500">
-                        Toplam {members.length} üye
+                        {t('modals.members.total_count', { count: members.length })}
                     </div>
                 </div>
             </div>
@@ -103,9 +105,10 @@ export default function MembersModal({ groupId, isOwner, onClose }: Props) {
                 isOpen={!!userToRemove}
                 onClose={() => setUserToRemove(null)}
                 onConfirm={executeRemove}
-                title="Üyeyi Çıkar"
-                description="Bu kullanıcıyı gruptan çıkarmak istediğine emin misin? Tekrar katılmak için davet linkine ihtiyacı olacak."
-                confirmText="Evet, Çıkar"
+                title={t('modals.members.confirm_kick_title')}
+                description={t('modals.members.confirm_kick_desc')}
+                confirmText={t('modals.members.btn_kick')}
+                cancelText={t('common.cancel')}
                 variant="danger"
                 loading={removeLoading}
             />

@@ -17,11 +17,13 @@ import GroupDetailPage from '@/features/groups/GroupDetailPage';
 import JoinGroupPage from '@/features/groups/JoinGroupPage';
 import ExplorePage from '@/features/groups/ExplorePage';
 import ProfilePage from "@/features/users/ProfilePage";
+import { useTranslation } from 'react-i18next';
 
 export default function AppRoutes() {
     const [user, setUser] = useState<UserDto | null>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     useEffect(() => {
         me().then(r => {
@@ -42,7 +44,7 @@ export default function AppRoutes() {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-950">
-                <p className="text-white">Yükleniyor...</p>
+                <p className="text-white">{t('common.loading')}</p>
             </div>
         );
     }
