@@ -1,5 +1,10 @@
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+      enabled: true
 
 spring:
   config:
@@ -21,6 +26,11 @@ spring:
       initialize-schema: always
   cache:
     type: caffeine
+
+  thymeleaf:
+    encoding: UTF-8
+    mode: HTML
+    cache: false
 
   mail:
     host: ${MAIL_HOST:localhost}
