@@ -15,7 +15,7 @@ type Props = {
 type Mode = 'DETAIL' | 'SELECT_GROUP' | 'SUCCESS' | 'EXISTS';
 
 export default function MovieDetailModal({ tmdbId, onClose }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [mode, setMode] = useState<Mode>('DETAIL');
 
     // Veriler
@@ -32,7 +32,12 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
         async function fetchDetails() {
             setLoading(true);
             setError(null);
-            const res = await MoviesApi.byId(tmdbId);
+
+            // Backend'e seçili dili gönderiyoruz
+            const currentLang = i18n.language || 'tr-TR';
+
+            const res = await MoviesApi.byId(tmdbId, currentLang);
+
             if (res.ok) {
                 setMovie(res.data);
             } else {
@@ -41,7 +46,7 @@ export default function MovieDetailModal({ tmdbId, onClose }: Props) {
             setLoading(false);
         }
         fetchDetails();
-    }, [tmdbId, t]);
+    }, [tmdbId, t, i18n.language]); // Dil değiştiğinde tekrar çalışır
 
     // 2. Grupları Yükle
     const handleStartSuggest = async () => {

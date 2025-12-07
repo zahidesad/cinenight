@@ -43,7 +43,7 @@ public class MovieService {
     private final GenreService genreService;
     private final MovieViewRepository views;
     private final MovieVoteRepository votes;
-    private final MessageSource messageSource; // EKLENDİ
+    private final MessageSource messageSource;
 
     @Autowired
     @Lazy
@@ -59,23 +59,24 @@ public class MovieService {
         this.messageSource = messageSource;
     }
 
-    // Yardımcı: Mesaj çekme
     private String getMsg(String key) {
         return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
-
-    @Cacheable(value = "movieById", key = "#tmdbId")
+    /**
+     * DÜZELTME: Cache key artık ID ve DİL kombinasyonunu içeriyor.
+     * Ayrıca DB'de olsa bile güncel dildeki veriyi TMDB'den çekip DB'yi güncelliyor.
+     */
+    @Cacheable(value = "movieById", key = "#tmdbId + '-' + #lang")
     public MovieDto byId(int tmdbId, String lang) {
-        var existing = movies.findByTmdbId(tmdbId);
-        if (existing.isPresent() && existing.get().getDescription() != null) {
-            return MovieDto.from(existing.get());
-        }
-
-        TmdbMovie tm = tmdb.movieDetail(tmdbId, lang);
         try {
+            // 1. TMDB'den taze veriyi çek (istenilen dilde)
+            TmdbMovie tm = tmdb.movieDetail(tmdbId, lang);
+
+            // 2. Veritabanını güncelle veya yeni ekle (Upsert) ve DTO dön
             return MovieDto.from(self.upsertFromTmdb(tm, lang));
         } catch (Exception e) {
+            // 3. Hata durumunda (TMDB erişilemezse) mecburen DB'deki eski kaydı dön
             return movies.findByTmdbId(tmdbId)
                     .map(MovieDto::from)
                     .orElseThrow(() -> new IllegalStateException(getMsg("movie.load.failed"), e));
@@ -160,13 +161,6 @@ public class MovieService {
             m.setGenres(t.genre_ids().stream().map(id -> map.getOrDefault(id, String.valueOf(id))).collect(Collectors.joining(",")));
         }
         m.setFetchedAt(Instant.now());
-    }
-
-    private Movie ensureMovieEntity(int tmdbId, String lang) {
-        return movies.findByTmdbId(tmdbId).orElseGet(() -> {
-            var tm = tmdb.movieDetail(tmdbId, lang);
-            return self.upsertFromTmdb(tm, lang);
-        });
     }
 
     public void recordView(int tmdbId, String lang, String ip, String ua) {
