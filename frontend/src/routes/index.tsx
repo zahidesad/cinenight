@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { me, type UserDto } from '@/api/auth';
 import RootLayout from '@/components/RootLayout';
 import AuthLayout from '@/components/AuthLayout';
-import ProtectedRoute from '@/components/ProtectedRoute'; // EKLENDİ
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 import HomePage from '@/features/home/HomePage';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import VerifyEmailPage from '@/features/auth/VerifyEmailPage';
 import TryDemoPage from '@/features/home/TryDemoPage';
 import GroupsPage from '@/features/groups/GroupsPage';
 import GroupDetailPage from '@/features/groups/GroupDetailPage';
@@ -67,6 +68,7 @@ export default function AppRoutes() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
             </Route>
         </Routes>
     );

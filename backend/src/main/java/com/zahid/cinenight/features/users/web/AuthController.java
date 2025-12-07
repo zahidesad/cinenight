@@ -52,4 +52,10 @@ public class AuthController {
         if (principal == null) return ApiResponse.ok(null);
         return ApiResponse.ok(auth.me(principal.getUsername()));
     }
+
+    @PostMapping("/verify")
+    public ApiResponse<String> verify(@RequestParam String token) {
+        auth.verifyEmail(token);
+        return ApiResponse.ok("verified");
+    }
 }

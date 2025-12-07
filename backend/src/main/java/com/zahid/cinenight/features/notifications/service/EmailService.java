@@ -31,4 +31,20 @@ public class EmailService {
                 """.formatted(resetLink));
         mail.send(msg);
     }
+
+    public void sendVerification(String to, String link) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(from);
+        msg.setTo(to);
+        msg.setSubject("CineNight - Hesabını Doğrula");
+        msg.setText("""
+                Merhaba,
+
+                CineNight'a hoş geldin! Kaydını tamamlamak için aşağıdaki bağlantıya tıkla:
+                %s
+
+                Bu bağlantı 24 saat geçerlidir.
+                """.formatted(link));
+        mail.send(msg);
+    }
 }

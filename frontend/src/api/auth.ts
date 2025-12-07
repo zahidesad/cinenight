@@ -37,4 +37,8 @@ export function logout(): Promise<ApiResponse<string>> {
     return apiPost<string>(`${base}/logout`);
 }
 
-export const AuthApi = { login, register, forgot, resetPassword, me, logout };
+export function verifyEmail(token: string): Promise<ApiResponse<string>> {
+    return apiPost<string>(`/auth/verify?token=${token}`);
+}
+
+export const AuthApi = { login, register, forgot, resetPassword, me, logout,verifyEmail };

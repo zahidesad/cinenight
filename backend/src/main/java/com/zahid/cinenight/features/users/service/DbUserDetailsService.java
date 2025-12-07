@@ -21,8 +21,8 @@ public class DbUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(u.getEmail())
                 .password(u.getPasswordHash())
+                .disabled(u.getStatus() == com.zahid.cinenight.features.users.domain.UserStatus.DISABLED)
                 .roles("USER")
                 .build();
-
     }
 }

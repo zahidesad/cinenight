@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { register } from '@/api/auth';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import {User, Mail, Lock, Eye, EyeOff, CheckCircle} from 'lucide-react';
 
 export default function RegisterPage() {
     const [displayName, setDisplayName] = useState('');
@@ -9,7 +9,7 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [showPw, setShowPw] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate();
+    const [success, setSuccess] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,11 +20,29 @@ export default function RegisterPage() {
         }
         const res = await register(email, password, displayName);
         if (res.ok) {
-            navigate('/login');
+            setSuccess(true);
         } else {
-            setError(res.error || 'Kayıt başarısız. Daha sonra tekrar dene.');
+            setError(res.error || 'Kayıt başarısız.');
         }
     };
+
+    if (success) {
+        return (
+            <div className="text-center space-y-6 py-10">
+                <div className="flex justify-center">
+                    <CheckCircle className="h-16 w-16 text-emerald-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Kaydın Alındı!</h2>
+                <p className="text-gray-300">
+                    Hesabını aktifleştirmek için <strong>{email}</strong> adresine bir doğrulama bağlantısı gönderdik.
+                    Lütfen e-posta kutunu kontrol et.
+                </p>
+                <Link to="/login" className="inline-block px-6 py-3 rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition">
+                    Giriş Sayfasına Dön
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

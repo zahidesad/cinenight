@@ -26,7 +26,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             const redirectUrl = searchParams.get('redirect') || '/';
             navigate(redirectUrl);
         } else {
-            setError(res.error || 'Giriş yapılamadı. Bilgileri kontrol et.');
+            let msg = res.error || 'Giriş yapılamadı.';
+            if (msg.includes('disabled')) {
+                msg = 'Hesabın henüz aktif değil. Lütfen e-postana gönderilen doğrulama bağlantısına tıkla.';
+            }
+            setError(msg);
         }
     };
 

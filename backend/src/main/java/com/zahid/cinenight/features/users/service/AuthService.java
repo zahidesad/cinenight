@@ -1,14 +1,12 @@
 package com.zahid.cinenight.features.users.service;
 
 import com.zahid.cinenight.features.notifications.service.EmailService;
-import com.zahid.cinenight.features.users.domain.PasswordResetToken;
-import com.zahid.cinenight.features.users.domain.PasswordResetTokenRepository;
-import com.zahid.cinenight.features.users.domain.User;
-import com.zahid.cinenight.features.users.domain.UserRepository;
+import com.zahid.cinenight.features.users.domain.*;
 import com.zahid.cinenight.features.users.dto.AuthDtos.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,34 +29,84 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
+    private final VerificationTokenRepository verifyTokens;
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
 
     public AuthService(UserRepository users,
                        PasswordResetTokenRepository tokens,
+                       VerificationTokenRepository verifyTokens,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        SecurityContextRepository securityContextRepository,
                        EmailService emailService) {
         this.users = users;
         this.tokens = tokens;
+        this.verifyTokens = verifyTokens;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.emailService = emailService;
     }
 
+    @Transactional
     public UserDto register(RegisterRequest req) {
         if (users.existsByEmail(req.email())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new IllegalArgumentException("Bu e-posta adresi zaten kullanılıyor.");
         }
-        User u = new User();
-        u.setEmail(req.email());
-        u.setDisplayName(req.displayName());
-        u.setPasswordHash(passwordEncoder.encode(req.password()));
-        users.save(u);
-        return toDto(u);
+
+        try {
+            User u = new User();
+            u.setEmail(req.email());
+            u.setDisplayName(req.displayName());
+            u.setPasswordHash(passwordEncoder.encode(req.password()));
+
+            u.setStatus(UserStatus.DISABLED);
+
+            users.save(u);
+
+            String token = UUID.randomUUID().toString();
+            VerificationToken vt = new VerificationToken();
+            vt.setUser(u);
+            vt.setToken(token);
+            vt.setExpiresAt(LocalDateTime.now().plusHours(24)); // 24 saat geçerli
+            verifyTokens.save(vt);
+
+            String link = String.format("%s/verify-email?token=%s", frontendBaseUrl, token);
+            emailService.sendVerification(u.getEmail(), link);
+
+            return toDto(u);
+        }catch (DataIntegrityViolationException e){
+            throw new IllegalArgumentException("Bu e-posta adresi zaten kayıtlı.");
+        }
+    }
+
+    @Transactional
+    public void verifyEmail(String token) {
+        var vtOptional = verifyTokens.findByToken(token);
+        if (vtOptional.isEmpty()) {
+            return;
+        }
+
+        VerificationToken vt = vtOptional.get();
+
+        if (vt.getExpiresAt().isBefore(LocalDateTime.now())) {
+            verifyTokens.delete(vt);
+            throw new IllegalArgumentException("Bağlantının süresi dolmuş. Lütfen tekrar kayıt olun.");
+        }
+
+        User u = vt.getUser();
+        if (u.getStatus() != UserStatus.ACTIVE) {
+            u.setStatus(UserStatus.ACTIVE);
+            users.save(u);
+        }
+
+        try {
+            verifyTokens.delete(vt);
+            verifyTokens.flush();
+        } catch (Exception e) {
+        }
     }
 
     public UserDto login(LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
