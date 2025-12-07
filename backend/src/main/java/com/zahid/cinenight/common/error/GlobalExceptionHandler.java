@@ -29,14 +29,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiError> handleAuth(AuthenticationException ex, HttpServletRequest req) {
-        String errId = logAndGetErrId(ex, req);
+        log.warn("Auth failed [{} {}]: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
 
         String code = "INVALID_CREDENTIALS";
         String message = "E-posta veya şifre yanlış.";
+        String errId = "";
 
         if (ex instanceof DisabledException) {
             code = "ACCOUNT_DISABLED";
-            message = "Hesabın devre dışı.";
+            message = "Hesabın devre dışı. Lütfen e-postanı doğrula.";
         } else if (ex instanceof LockedException) {
             code = "ACCOUNT_LOCKED";
             message = "Hesabın kilitli.";

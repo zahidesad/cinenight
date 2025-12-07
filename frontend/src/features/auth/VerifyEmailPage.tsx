@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react'; // useRef'i eklemeyi unutma
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyEmail } from '@/api/auth';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -7,6 +7,8 @@ export default function VerifyEmailPage() {
     const [params] = useSearchParams();
     const navigate = useNavigate();
     const token = params.get('token');
+
+    const requestSent = useRef(false);
 
     const [status, setStatus] = useState<'LOADING' | 'SUCCESS' | 'ERROR'>('LOADING');
     const [msg, setMsg] = useState('');
@@ -17,6 +19,9 @@ export default function VerifyEmailPage() {
             setMsg('Geçersiz bağlantı.');
             return;
         }
+
+        if (requestSent.current) return;
+        requestSent.current = true;
 
         verifyEmail(token).then(res => {
             if (res.ok) {
@@ -30,6 +35,7 @@ export default function VerifyEmailPage() {
         });
     }, [token, navigate]);
 
+    // ... (return kısmı aynı kalacak)
     return (
         <div className="flex flex-col items-center justify-center text-center space-y-6 py-10">
             {status === 'LOADING' && (

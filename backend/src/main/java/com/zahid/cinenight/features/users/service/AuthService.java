@@ -102,11 +102,7 @@ public class AuthService {
             users.save(u);
         }
 
-        try {
-            verifyTokens.delete(vt);
-            verifyTokens.flush();
-        } catch (Exception e) {
-        }
+        verifyTokens.delete(vt);
     }
 
     public UserDto login(LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
