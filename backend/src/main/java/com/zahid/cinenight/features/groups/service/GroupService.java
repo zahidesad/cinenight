@@ -1,6 +1,7 @@
 package com.zahid.cinenight.features.groups.service;
 
 import com.zahid.cinenight.features.groups.domain.*;
+import com.zahid.cinenight.features.polls.domain.VoteRepository;
 import com.zahid.cinenight.features.users.domain.User;
 import com.zahid.cinenight.features.users.domain.UserRepository;
 import jakarta.transaction.Transactional;
@@ -30,11 +31,13 @@ public class GroupService {
     private final GroupRepository groups;
     private final GroupMemberRepository members;
     private final UserRepository users;
+    private final VoteRepository votes;
 
-    public GroupService(GroupRepository groups, GroupMemberRepository members, UserRepository users) {
+    public GroupService(GroupRepository groups, GroupMemberRepository members, UserRepository users, VoteRepository votes) {
         this.groups = groups;
         this.members = members;
         this.users = users;
+        this.votes = votes;
     }
 
     @Transactional
@@ -171,6 +174,18 @@ public class GroupService {
         }
 
         groups.delete(g);
+    }
+
+    @Transactional
+    public void leaveGroup(Long groupId, Long userId) {
+        GroupMember member = members.findById(new GroupMemberId(groupId, userId))
+                .orElseThrow(() -> new IllegalArgumentException("Bu grubun üyesi değilsiniz."));
+
+        if (member.getRole() == GroupRole.OWNER) {
+            throw new IllegalArgumentException("Grup yöneticisi gruptan ayrılamaz. Ancak grubu silebilirsiniz.");
+        }
+        votes.deleteByUserIdAndGroupId(userId, groupId);
+        members.delete(member);
     }
 
     private void ensureMember(Long groupId, Long userId) {

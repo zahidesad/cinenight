@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchActivePoll, castVote, type PollDetailDto } from '@/api/polls';
 import { fetchGroupEvents, rsvpEvent, type EventDto } from '@/api/events';
-import { fetchMyGroups, deleteGroup } from '@/api/groups';
-import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock, Settings, Trash2 } from 'lucide-react';
+import { fetchMyGroups, deleteGroup, leaveGroup } from '@/api/groups';
+import { ChevronLeft, Loader2, Share2, Check, Calendar, MapPin, Film, X, Trophy, Clock, Settings, Trash2, LogOut } from 'lucide-react'; // LogOut EKLENDİ
 import MovieDetailModal from '@/components/MovieDetailModal';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -32,15 +32,21 @@ export default function GroupDetailPage() {
     const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
     const [showEventModal, setShowEventModal] = useState(false);
     const [showMembersModal, setShowMembersModal] = useState(false);
+
+    // Silme ve Ayrılma Modalları
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
+
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false); // EKLENDİ
+    const [leaveLoading, setLeaveLoading] = useState(false); // EKLENDİ
+
     const [inviteToken, setInviteToken] = useState<string | null>(null);
 
     // Verileri Yükle
     const loadData = async () => {
         if (!groupId) return;
         try {
-            // Paralel veri çekme: Anket, Etkinlikler ve Gruplar (Rolü bulmak için)
+            // Paralel veri çekme
             const [pollRes, eventsRes, groupsRes] = await Promise.all([
                 fetchActivePoll(Number(groupId)),
                 fetchGroupEvents(Number(groupId)),
@@ -50,12 +56,12 @@ export default function GroupDetailPage() {
             if (pollRes.ok) {
                 setPoll(pollRes.data);
             } else {
-                setPoll(null); // Anket yoksa temizle
+                setPoll(null);
             }
 
             if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
 
-            // Kullanıcının bu gruptaki rolünü ve davet token'ını bul
+            // Kullanıcının bu gruptaki rolünü bul
             if (groupsRes.ok && groupsRes.data) {
                 const currentGroup = groupsRes.data.find(g => g.id === Number(groupId));
                 if (currentGroup) {
@@ -92,13 +98,12 @@ export default function GroupDetailPage() {
     const handleRsvp = async (eventId: number, status: 'YES' | 'NO') => {
         setRsvpLoading(eventId);
         await rsvpEvent(eventId, status);
-        // Listeyi yenile ki buton rengi ve katılımcı listesi güncellensin
         const eventsRes = await fetchGroupEvents(Number(groupId));
         if (eventsRes.ok && eventsRes.data) setEvents(eventsRes.data);
         setRsvpLoading(null);
     };
 
-    // Grubu Silme
+    // Grubu Silme (Sadece Owner)
     const handleDeleteGroup = async () => {
         setDeleteLoading(true);
         const res = await deleteGroup(Number(groupId));
@@ -111,7 +116,19 @@ export default function GroupDetailPage() {
         }
     };
 
-    // Davet Linki Kopyalama
+    // Gruptan Ayrılma (Sadece Member)
+    const handleLeaveGroup = async () => {
+        setLeaveLoading(true);
+        const res = await leaveGroup(Number(groupId));
+        if (res.ok) {
+            navigate('/dashboard');
+        } else {
+            setLeaveLoading(false);
+            setShowLeaveConfirm(false);
+            alert(res.error || "Gruptan ayrılamadın.");
+        }
+    };
+
     const handleCopyInvite = () => {
         if (!inviteToken) return;
         const link = `${window.location.origin}/join/${inviteToken}`;
@@ -128,7 +145,6 @@ export default function GroupDetailPage() {
         );
     }
 
-    // Kazananları Hesapla (Beraberlik durumunu yönetmek için liste dönüyoruz)
     const winners = poll && poll.options.length > 0
         ? poll.options.filter(o => o.voteCount === poll.options[0].voteCount && o.voteCount > 0)
         : [];
@@ -154,6 +170,7 @@ export default function GroupDetailPage() {
                 </div>
 
                 <div className="flex gap-2">
+                    {/* YÖNETİCİ İSE SİL BUTONU */}
                     {role === 'OWNER' && (
                         <button
                             onClick={() => setShowDeleteConfirm(true)}
@@ -161,6 +178,17 @@ export default function GroupDetailPage() {
                             title="Grubu Sil"
                         >
                             <Trash2 className="h-5 w-5" />
+                        </button>
+                    )}
+
+                    {/* ÜYE İSE AYRIL BUTONU (YENİ EKLENDİ) */}
+                    {role !== 'OWNER' && (
+                        <button
+                            onClick={() => setShowLeaveConfirm(true)}
+                            className="p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition border border-red-500/20"
+                            title="Gruptan Ayrıl"
+                        >
+                            <LogOut className="h-5 w-5" />
                         </button>
                     )}
 
@@ -177,7 +205,7 @@ export default function GroupDetailPage() {
                         className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-sm font-semibold border border-indigo-500/20 hover:border-indigo-500 shadow-lg shadow-indigo-500/5"
                     >
                         {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />}
-                        {copied ? "Link Kopyalandı" : "Davet Et"}
+                        {copied ? "Link Kopyalandı" : "Arkadaşlarını Davet Et"}
                     </button>
                 </div>
             </div>
@@ -242,7 +270,7 @@ export default function GroupDetailPage() {
                                         )}
                                     </div>
 
-                                    {/* Katılımcı Listesi (Yeni Eklendi) */}
+                                    {/* Katılımcı Listesi */}
                                     {evt.participants && evt.participants.length > 0 && (
                                         <div className="flex items-center gap-2 mb-6 pt-4 border-t border-white/5">
                                             <div className="flex -space-x-2 overflow-hidden">
@@ -456,16 +484,15 @@ export default function GroupDetailPage() {
                 />
             )}
 
-            {showEventModal && poll && poll.options.length > 0 && (
+            {showEventModal && poll && (
                 <CreateEventModal
                     groupId={Number(groupId)}
                     pollId={poll.id}
-                    movies={winners}
+                    movies={winners} // Kazananların listesini gönderiyoruz (Beraberlik için)
                     onClose={() => setShowEventModal(false)}
                     onSuccess={() => {
                         loadData(); // Sayfayı yenile
-                        // UI'ı anında güncelle (Planla butonunu kaldır)
-                        setPoll(null);
+                        setPoll(prev => prev ? { ...prev, isOpen: false } : null); // UI'dan Planla butonunu anında kaldır
                     }}
                 />
             )}
@@ -478,6 +505,7 @@ export default function GroupDetailPage() {
                 />
             )}
 
+            {/* SİLME ONAY MODALI */}
             <ConfirmModal
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
@@ -488,6 +516,19 @@ export default function GroupDetailPage() {
                 cancelText="Vazgeç"
                 variant="danger"
                 loading={deleteLoading}
+            />
+
+            {/* AYRILMA ONAY MODALI */}
+            <ConfirmModal
+                isOpen={showLeaveConfirm}
+                onClose={() => setShowLeaveConfirm(false)}
+                onConfirm={handleLeaveGroup}
+                title="Gruptan Ayrıl"
+                description="Bu gruptan ayrılmak istediğine emin misin? Tekrar katılmak için davet linkine ihtiyacın olacak."
+                confirmText="Evet, Ayrıl"
+                cancelText="Vazgeç"
+                variant="danger"
+                loading={leaveLoading}
             />
         </div>
     );

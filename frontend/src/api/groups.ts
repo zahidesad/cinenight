@@ -59,3 +59,7 @@ export function removeMember(groupId: number, userId: number) {
 export function deleteGroup(groupId: number) {
     return apiDelete<string>(`/groups/${groupId}`);
 }
+
+export function leaveGroup(groupId: number) {
+    return apiPost<string>(`/groups/${groupId}/leave`);
+}

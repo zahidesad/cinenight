@@ -97,4 +97,11 @@ public class GroupController {
         service.deleteGroup(groupId, uid(p));
         return ApiResponse.ok("deleted");
     }
+
+    @PostMapping("/{groupId}/leave")
+    public ApiResponse<String> leave(@AuthenticationPrincipal UserDetails p,
+                                     @PathVariable Long groupId) {
+        service.leaveGroup(groupId, uid(p));
+        return ApiResponse.ok("left");
+    }
 }
