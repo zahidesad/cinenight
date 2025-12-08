@@ -10,7 +10,7 @@ spring:
   config:
     import: optional:file:env/backend.local.properties
   datasource:
-    url: jdbc:mysql://localhost:3306/cinenight?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8
+    url: jdbc:mysql://${DB_HOST:mysql}:3306/cinenight?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8
     username: ${DB_ROOT:root}
     password: ${DB_PASSWORD:1234}
   jpa:
@@ -51,12 +51,11 @@ logging.level:
 
 app:
   frontend:
-    base-url: ${APP_FRONTEND_BASE_URL:http://localhost:5173}
+    base-url: ${APP_FRONTEND_BASE_URL:https://cinenight.tech}
   mail:
     from: "CineNight"
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
-
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://cinenight.tech,https://www.cinenight.tech,http://localhost:5173}
 tmdb:
   api-key: ${TMDB_API_KEY}
   base-url: https://api.themoviedb.org/3

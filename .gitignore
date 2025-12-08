@@ -37,3 +37,4 @@ HELP.md
 mvnw
 mvnw.cmd
 .gitattributes
+frontend/package-lock.json
