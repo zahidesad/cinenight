@@ -10,7 +10,7 @@ spring:
   config:
     import: optional:file:env/backend.local.properties
   datasource:
-    url: jdbc:mysql://${DB_HOST:mysql}:3306/cinenight?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/cinenight?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8
     username: ${DB_ROOT:root}
     password: ${DB_PASSWORD:1234}
   jpa:
