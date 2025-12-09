@@ -7,12 +7,12 @@ No more asking "What are we watching tonight?" for hours!
 ## 📸 Screenshots
 
 | Home Page & Search | Group Details & Voting |
-|:------------------:|:----------------------:|
-| ![Home Page](PLACE_YOUR_HOME_PAGE_IMAGE_LINK_HERE) | ![Group Details](PLACE_YOUR_GROUP_IMAGE_LINK_HERE) |
+|:---:|:---:|
+| <img src="https://github.com/user-attachments/assets/00585e27-00f3-401c-bdec-f3198504698b" alt="Home Page" width="100%"> | <img src="https://github.com/user-attachments/assets/89974837-449f-4620-96c5-67d8e40e0095" alt="Group Details" width="100%"> |
 
 | Movie Suggestions | Mobile Responsive View |
-|:-----------------:|:----------------------:|
-| ![Movie Modal](PLACE_YOUR_MODAL_IMAGE_LINK_HERE) | ![Mobile View](PLACE_YOUR_MOBILE_IMAGE_LINK_HERE) |
+|:---:|:---:|
+| <img src="https://github.com/user-attachments/assets/2dfaba19-b90c-49b6-b8dc-fa6f2dffe488" alt="Movie Modal" width="100%"> | <img src="https://github.com/user-attachments/assets/ad8adec3-5461-4969-bf18-07c7dc7af8c5" alt="Mobile View" height="400"> |
 
 ---
 
