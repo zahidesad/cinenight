@@ -12,7 +12,7 @@ No more asking "What are we watching tonight?" for hours!
 
 | Movie Suggestions | Mobile Responsive View |
 |:---:|:---:|
-| <img src="https://github.com/user-attachments/assets/2dfaba19-b90c-49b6-b8dc-fa6f2dffe488" alt="Movie Modal" width="100%"> | <img src="https://github.com/user-attachments/assets/ad8adec3-5461-4969-bf18-07c7dc7af8c5" alt="Mobile View" height="400"> |
+| <img src="https://github.com/user-attachments/assets/2dfaba19-b90c-49b6-b8dc-fa6f2dffe488" alt="Movie Modal" width="100%"> | <img src="https://github.com/user-attachments/assets/ad8adec3-5461-4969-bf18-07c7dc7af8c5" alt="Mobile View" height="800"> |
 
 ---
 
